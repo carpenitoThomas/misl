@@ -1,16 +1,19 @@
 Package: misl
-Title: What the Package Does (One Line, Title Case)
+Title: Performs multiple imputation using the super learning framework.
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Thomas",
+           family = "Carpenito",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
+           email = "carpenito.t@gmail.com",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+Description: The  MISL  algorithm  is  similar  to  other  full  conditional  specification  methods  in  that  a  series  of m unique datasets are generated through convergence of multiple iterations however the true predictive power of MISL is highlighted with the advantage of not needing to make explicit modeling assumptions about the distribution of the data.  This allows for variability in imputations to come from the variation in cross validation, not from explicitly modeling posterior distributions.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Suggests: 
+    testthat
+Imports: 
+    sl3
