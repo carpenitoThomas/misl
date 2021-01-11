@@ -115,14 +115,15 @@ misl <- function(dataset,
         }
 
         # Next we stack the learners
-        # stack learners into a model (including screeners and pipelines)
-        learner_stack <- Stack$new(SL.glmnet_learner, glm_learner, screen_and_glm)
+        learner_stack_code <-paste("stack", " <- make_learner(Stack,",paste(learner_list, collapse = ", "), ")", sep="")
+        eval(parse(text=learner_stack_code))
 
-        # We can then train our stack
-        stack_fit <- learner_stack$train(task)
+        # Then we make and train the Super Learner
+        sl <- Lrnr_sl$new(learners = stack)
+        stack_fit <- sl$train(task)
 
         # An finally obtain predictions from the stack
-        preds <- stack_fit$predict()
+        predictions <- stack_fit$predict()
 
       }
 
