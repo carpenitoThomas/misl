@@ -5,6 +5,10 @@
 
 # Include any dependencies
 library("SuperLearner")
+library("mice")
+library("ggplot2")
+library("gridExtra")
+library("dplyr")
 
 #Define the mode to be used
 Mode <- function(x) {
@@ -12,12 +16,12 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
-novel_imputation <- function(dataset){
+misl <- function(dataset){
   trace_plot_row_counter <- 1
   imputed_datasets <- c()
   trace_plot <- data.frame(mean_value = NA, sd_value = NA, variable = NA, m = NA, iteration = NA)
   for(m in 1:5){
-    #print(paste("M ", m))
+    print(paste("M ", m))
     # To make this a multiple imputation, we will do this five times
     # Note, here we prioritize by amount of available data
     # Columns with MORE information (LESS missing data) are imputed first
@@ -58,6 +62,7 @@ novel_imputation <- function(dataset){
 
         # Note, sometimes the SuperLearner assigns 0 weight - this is has been requested to be turned into a warning.
         if(length(levels(as.factor(yvar))) == 2){
+          # This is going to fail if the factor is two levels but isn't 0-1.
           sl_lib = c( "SL.glm", "SL.lda", "SL.mean")
           superlearner_column <-  try(SuperLearner(Y = yvar, X = xvars ,SL.library = sl_lib, family = binomial(), method = "method.NNLS"), silent = TRUE)
           flag = ifelse(inherits(superlearner_column, "try-error"), TRUE, FALSE)
@@ -127,3 +132,11 @@ novel_imputation <- function(dataset){
   object <- list(datasets = imputed_datasets, trace = trace_plot)
   return(list(object))
 }
+
+
+
+### Testing function
+
+
+
+
