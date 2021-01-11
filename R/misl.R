@@ -97,19 +97,18 @@ misl <- function(dataset,
         # First, define the task
         task <- sl3::sl3_Task$new(full_dataframe, covariates = xvars, outcome = yvar)
 
-        # Next do we have any screeners to build?
+        # TODO: Add Screeners?
 
         # Depending on the outcome, we need to build out the learner
         learners <- switch(column_type,
                categorical = cat_method,
                binary = bin_method ,
-               continuous = con_method
-               )
+               continuous = con_method)
 
-        # Next, iterate through each of the supplied learners to build the SL3 learners
+        # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
         for(learner in learners){
-          code.lm <-paste(learner, "<-", learner, "$new()", sep="")
+          code.lm <- paste(learner, " <- ", learner, "$new()", sep="")
           eval(parse(text=code.lm))
           learner_list <- c(learner, learner_list)
         }
@@ -122,8 +121,33 @@ misl <- function(dataset,
         sl <- Lrnr_sl$new(learners = stack)
         stack_fit <- sl$train(task)
 
-        # An finally obtain predictions from the stack
+        # And finally obtain predictions from the stack
         predictions <- stack_fit$predict()
+
+        # Once we have the predictions we can replace the missing values from the original dataframe
+        # Note, we add a bit of random noise here
+        if(column_type == "binary"){
+          predicted_values <- rbinom(length(dataset_master_copy[[column]]), 1, predictions)
+          dataset_master_copy[[column]] <- ifelse(missing_yvar, predicted_values, dataset[[column]])
+
+        }else if(column_type == "continuous"){
+          dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions + rnorm(n = length(predictions), mean = 0, sd = sd(predictions) ), dataset[[column]])
+
+        }else{
+          # In this instance, the column type is categorical
+          # This is depedent on what the super learner returns (predictions or predicted probabilities)
+          dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions, dataset[[column]])
+        }
+
+        # We can set this column back in the dataframe and move on to the next.
+        new_imputed_dataset <- dataset_master_copy
+
+        # Lastly, we should remove the learners for the next column (should there be overlap)
+        for(learner in learner_list){
+          code.lm <- paste("rm(", learner, ")", sep="")
+          eval(parse(text=code.lm))
+        }
+
 
       }
 
