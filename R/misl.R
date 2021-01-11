@@ -1,6 +1,19 @@
-# This file is going to be where the main MISL code lies.
-# I expect this file to change a lot over time
-
+#' Imputes missing values using multiple imputation by super learning
+#'
+#' @param dataset
+#' @param m
+#' @param maxit
+#' @param seed
+#' @param con_method
+#' @param bin_method
+#' @param cat_method
+#' @param missing_default
+#' @param quiet Boolean
+#'
+#' @return
+#' @export
+#'
+#' @examples
 misl <- function(dataset,
                  m = 5,
                  maxit = 5,
@@ -8,6 +21,7 @@ misl <- function(dataset,
                  con_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  bin_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 missing_default = "mean",
                  quiet = TRUE
                  ){
 
@@ -23,11 +37,96 @@ misl <- function(dataset,
     # The order here specifies most missing data to least though the order should not be important (per MICE).
     column_order <- colnames(dataset)[order(colSums(is.na(dataset)))]
 
+    # Retain a copy of the dataset for each of the new m datasets
+    dataset_master_copy <- dataset
+
     # Next, we begin the iterations within each dataset.
     for(i in seq_along(1:maxit)){
 
       # Do users want to know which iteration they are imputing?
       ifelse(quiet, NULL, print(paste("Imputing iteration:", i)))
+
+      # Begin the iteration column by column
+      for(column in column_order){
+
+        # Print what column we are starting with
+        ifelse(quiet, NULL, print(paste("Imputing:", column)))
+
+        # First, we extract all complete records with respect to the column we are imputing
+        # Note, this means filtering the dataframe for all records that are complete for this column
+        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+
+        # Next identify the predictors (x vars) and outcome (y var) depending on the column imputing
+        yvar <- column
+        xvars <- colnames(full_dataframe[ , -which(names(full_dataframe) %in% c(column)), drop = FALSE])
+
+        # We need to keep track of which values from the original dataframe are missing
+        # This is important becuase after the first iteration NONE of the values will be classified as missing
+        # Since MISL will have imputed them. When we iterate we only want to change these values per column.
+        missing_yvar <- is.na(dataset[[column]])
+
+        # This should probably be broken out into its own function
+        # For the first iteration, any missing values will need to be set to either the mean or mode of the column
+        # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well.
+        # Note, we include the "yvar" in this iteration though nothing should be imputed for this column (since we subsetted with respect to it being full)
+        # It would be easy to define this column type as a variable.
+        column_type <- NULL
+        for(column_number in seq_along(full_dataframe)){
+          # This is a check to see if the column is a factor, requiring mode imputation
+          # This means that the column should be registered as a factor.
+          if(class(full_dataframe[[column_number]]) == "factor"){
+            full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_mode(full_dataframe[,column_number])
+            column_type <- "categorical"
+          }else{
+            # We assume now that we have some continuous variable... BUT this variable could be binary or continuous
+            # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
+            # This function is incomplete in its checks...
+            if(length(levels(as.factor(full_dataframe[,column_number]))) == 2){
+              full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_mode(full_dataframe[,column_number])
+              column_type <- "binary"
+            }else{
+              # Here, we assume a continuous variable and can use simple mean or median imputation
+              full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  get(missing_default)(full_dataframe[,column_number], na.rm = TRUE)
+              column_type <- "continuous"
+            }
+          }
+        }
+
+        # We should now have a complete dataframe and can being misl.
+
+        # First, define the task
+        task <- sl3::sl3_Task$new(full_dataframe, covariates = xvars, outcome = yvar)
+
+        # Next do we have any screeners to build?
+
+        # Depending on the outcome, we need to build out the learner
+        learners <- switch(column_type,
+               categorical = cat_method,
+               binary = bin_method ,
+               continuous = con_method
+               )
+
+        # Next, iterate through each of the supplied learners to build the SL3 learners
+        learner_list <- c()
+        for(learner in learners){
+          code.lm <-paste(learner, "<-", learner, "$new()", sep="")
+          eval(parse(text=code.lm))
+          learner_list <- c(learner, learner_list)
+        }
+
+        # Next we stack the learners
+        # stack learners into a model (including screeners and pipelines)
+        learner_stack <- Stack$new(SL.glmnet_learner, glm_learner, screen_and_glm)
+
+        # We can then train our stack
+        stack_fit <- learner_stack$train(task)
+
+        # An finally obtain predictions from the stack
+        preds <- stack_fit$predict()
+
+      }
+
+
     }
 
 
