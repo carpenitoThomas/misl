@@ -41,6 +41,7 @@ misl <- function(dataset,
     dataset_master_copy <- dataset
 
     # Next, we begin the iterations within each dataset.
+    set.seed(9984)
     for(i in seq_along(1:maxit)){
 
       # Do users want to know which iteration they are imputing?
@@ -53,8 +54,15 @@ misl <- function(dataset,
         ifelse(quiet, NULL, print(paste("Imputing:", column)))
 
         # First, we extract all complete records with respect to the column we are imputing
-        # Note, this means filtering the dataframe for all records that are complete for this column
-        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+        # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
+        if(i == 1){
+          # For the first iteration, we're using only those rows for which data exists for the variable
+          full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+        }else{
+          # After the first iteration, we can use the newly imputed dataset (which should be full)
+          full_dataframe <- new_imputed_dataset
+        }
+
 
         # Next identify the predictors (x vars) and outcome (y var) depending on the column imputing
         yvar <- column
@@ -65,9 +73,8 @@ misl <- function(dataset,
         # Since MISL will have imputed them. When we iterate we only want to change these values per column.
         missing_yvar <- is.na(dataset[[column]])
 
-        # This should probably be broken out into its own function
-        # For the first iteration, any missing values will need to be set to either the mean or mode of the column
-        # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well.
+        # For the first iteration, any missing values will need to be set to either the mean or mode of the column.
+        # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well upon successive iterations.
         # Note, we include the "yvar" in this iteration though nothing should be imputed for this column (since we subsetted with respect to it being full)
         # It would be easy to define this column type as a variable.
         column_type <- NULL
