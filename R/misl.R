@@ -80,25 +80,10 @@ misl <- function(dataset,
         # It would be easy to define this column type as a variable.
         column_type <- NULL
         for(column_number in seq_along(full_dataframe)){
-          # This is a check to see if the column is a factor, requiring mode imputation
-          # This means that the column should be registered as a factor.
-          if(class(full_dataframe[[column_number]]) == "factor"){
-            full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_mode(full_dataframe[,column_number])
-            column_type <- "categorical"
-          }else{
-            # We assume now that we have some continuous variable... BUT this variable could be binary or continuous
-            # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
-            # This function is incomplete in its checks...
-            if(length(levels(as.factor(full_dataframe[,column_number]))) == 2){
-              full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_mode(full_dataframe[,column_number])
-              column_type <- "binary"
-            }else{
-              # Here, we assume a continuous variable and can use simple mean or median imputation
-              full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  get(missing_default)(full_dataframe[,column_number], na.rm = TRUE)
-              column_type <- "continuous"
-            }
-          }
+          full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
         }
+
+        column_type <- "continuous"
 
         # We should now have a complete dataframe and can being misl.
 
@@ -116,17 +101,17 @@ misl <- function(dataset,
         # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
         for(learner in learners){
-          code.lm <- paste(learner, " <- ", learner, "$new()", sep="")
+          code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
           eval(parse(text=code.lm))
           learner_list <- c(learner, learner_list)
         }
 
         # Next we stack the learners
-        learner_stack_code <- paste("stack", " <- make_learner(Stack,",paste(learner_list, collapse = ", "), ")", sep="")
+        learner_stack_code <- paste("stack", " <- sl3::make_learner(sl3::Stack,",paste(learner_list, collapse = ", "), ")", sep="")
         eval(parse(text=learner_stack_code))
 
         # Then we make and train the Super Learner
-        sl <- Lrnr_sl$new(learners = stack)
+        sl <- sl3::Lrnr_sl$new(learners = stack)
         stack_fit <- sl$train(task)
 
         # And finally obtain predictions from the stack on the full dataframe
