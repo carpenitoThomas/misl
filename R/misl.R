@@ -18,7 +18,7 @@ misl <- function(dataset,
                  m = 5,
                  maxit = 5,
                  seed = NA,
-                 con_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  missing_default = "mean",
@@ -27,11 +27,14 @@ misl <- function(dataset,
 
   # TO ADD: checks that we can actually begin the MISL algorithm.
 
+  # Initialize the return object (or, the dataframes that we want to return)
+  imputed_datasets <- vector("list", m)
+
   # This loop defines each of the imputed m datasets.
-  for(m in seq_along(1:m)){
+  for(m_loop in seq_along(1:m)){
 
     # Do users want to know which dataset they are imputing?
-    ifelse(quiet, NULL, print(paste("Imputing dataset:", m)))
+    ifelse(quiet, NULL, print(paste("Imputing dataset:", m_loop)))
 
     # Identify which order the columns should be imputed.
     # The order here specifies most missing data to least though the order should not be important (per MICE).
@@ -41,7 +44,6 @@ misl <- function(dataset,
     dataset_master_copy <- dataset
 
     # Next, we begin the iterations within each dataset.
-    set.seed(9984)
     for(i in seq_along(1:maxit)){
 
       # Do users want to know which iteration they are imputing?
@@ -57,12 +59,11 @@ misl <- function(dataset,
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
         if(i == 1){
           # For the first iteration, we're using only those rows for which data exists for the variable
-          full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+          full_dataframe <- dataset[!is.na(dataset[[column]]), ]
         }else{
           # After the first iteration, we can use the newly imputed dataset (which should be full)
           full_dataframe <- new_imputed_dataset
         }
-
 
         # Next identify the predictors (x vars) and outcome (y var) depending on the column imputing
         yvar <- column
@@ -102,7 +103,7 @@ misl <- function(dataset,
         # We should now have a complete dataframe and can being misl.
 
         # First, define the task
-        task <- sl3::sl3_Task$new(full_dataframe, covariates = xvars, outcome = yvar)
+        task <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar)
 
         # TODO: Add Screeners?
 
@@ -121,15 +122,43 @@ misl <- function(dataset,
         }
 
         # Next we stack the learners
-        learner_stack_code <-paste("stack", " <- make_learner(Stack,",paste(learner_list, collapse = ", "), ")", sep="")
+        learner_stack_code <- paste("stack", " <- make_learner(Stack,",paste(learner_list, collapse = ", "), ")", sep="")
         eval(parse(text=learner_stack_code))
 
         # Then we make and train the Super Learner
         sl <- Lrnr_sl$new(learners = stack)
         stack_fit <- sl$train(task)
 
-        # And finally obtain predictions from the stack
-        predictions <- stack_fit$predict()
+        # And finally obtain predictions from the stack on the full dataframe
+        if(i == 1){
+          dataset_copy <- dataset_master_copy
+          for(column_number in seq_along(dataset_copy)){
+            # This is a check to see if the column is a factor, requiring mode imputation
+            # This means that the column should be registered as a factor.
+            if(class(dataset_copy[[column_number]]) == "factor"){
+              dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[,column_number])
+              column_type <- "categorical"
+            }else{
+              # We assume now that we have some continuous variable... BUT this variable could be binary or continuous
+              # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
+              # This function is incomplete in its checks...
+              if(length(levels(as.factor(dataset_copy[,column_number]))) == 2){
+                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[,column_number])
+                column_type <- "binary"
+              }else{
+                # Here, we assume a continuous variable and can use simple mean or median imputation
+                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  get(missing_default)(dataset_copy[,column_number], na.rm = TRUE)
+                column_type <- "continuous"
+              }
+            }
+          }
+        }else{
+          dataset_copy <- full_dataframe
+        }
+
+
+        new_prediction_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
+        predictions <- stack_fit$predict(new_prediction_task)
 
         # Once we have the predictions we can replace the missing values from the original dataframe
         # Note, we add a bit of random noise here
@@ -160,8 +189,8 @@ misl <- function(dataset,
 
 
     }
-
-
-
+    # After all columns are imputed, we can save the dataset for recall later
+    imputed_datasets[[m_loop]] <- new_imputed_dataset
   }
+  return(imputed_datasets)
 }
