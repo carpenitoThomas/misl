@@ -16,7 +16,7 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
-misl <- function(dataset){
+misl_old <- function(dataset){
   trace_plot_row_counter <- 1
   imputed_datasets <- c()
   trace_plot <- data.frame(mean_value = NA, sd_value = NA, variable = NA, m = NA, iteration = NA)

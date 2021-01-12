@@ -8,7 +8,7 @@
 #' @param bin_method
 #' @param cat_method
 #' @param missing_default
-#' @param quiet Boolean
+#' @param quiet
 #'
 #' @return
 #' @export
@@ -34,7 +34,7 @@ misl <- function(dataset,
   for(m_loop in seq_along(1:m)){
 
     # Do users want to know which dataset they are imputing?
-    ifelse(quiet, NULL, print(paste("Imputing dataset:", m_loop)))
+    if(!quiet){print(paste("Imputing dataset:", m_loop))}
 
     # Identify which order the columns should be imputed.
     # The order here specifies most missing data to least though the order should not be important (per MICE).
@@ -47,13 +47,13 @@ misl <- function(dataset,
     for(i in seq_along(1:maxit)){
 
       # Do users want to know which iteration they are imputing?
-      ifelse(quiet, NULL, print(paste("Imputing iteration:", i)))
+      if(!quiet){print(paste("Imputing iteration:", i))}
 
       # Begin the iteration column by column
       for(column in column_order){
 
         # Print what column we are starting with
-        ifelse(quiet, NULL, print(paste("Imputing:", column)))
+        if(!quiet){print(paste("Imputing:", column))}
 
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)

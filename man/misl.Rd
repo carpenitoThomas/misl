@@ -4,10 +4,20 @@
 \alias{misl}
 \title{Imputes missing values using multiple imputation by super learning}
 \usage{
-misl(dataset)
+misl(
+  dataset,
+  m = 5,
+  maxit = 5,
+  seed = NA,
+  con_method = c("Lrnr_mean", "Lrnr_glm"),
+  bin_method = c("Lrnr_mean", "Lrnr_glmnet"),
+  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+  missing_default = "mean",
+  quiet = TRUE
+)
 }
 \arguments{
-\item{quiet}{Boolean}
+\item{quiet}{}
 }
 \value{
 

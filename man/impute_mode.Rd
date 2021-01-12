@@ -2,7 +2,7 @@
 % Please edit documentation in R/impute_mode.R
 \name{impute_mode}
 \alias{impute_mode}
-\title{Returns the mode (most occuring value). Note, this function will only return a single mode.}
+\title{Returns the mode (most occuring value)}
 \usage{
 impute_mode(x)
 }
@@ -13,7 +13,7 @@ impute_mode(x)
 num
 }
 \description{
-Returns the mode (most occuring value). Note, this function will only return a single mode.
+Returns the mode (most occuring value)
 }
 \examples{
 impute_mode(c(1,1,2,3))
