@@ -13,7 +13,7 @@ misl(
   bin_method = c("Lrnr_mean", "Lrnr_glmnet"),
   cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
   missing_default = "mean",
-  quiet = TRUE
+  quiet = FALSE
 )
 }
 \arguments{
