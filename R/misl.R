@@ -20,7 +20,7 @@ misl <- function(dataset,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
-                 cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 cat_method = c("Lrnr_mean"),
                  missing_default = "mean",
                  quiet = FALSE
                  ){
@@ -43,6 +43,9 @@ misl <- function(dataset,
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
 
+    # Create the newly imputed dataset
+    new_imputed_dataset <- dataset
+
     # Next, we begin the iterations within each dataset.
     for(i in seq_along(1:maxit)){
 
@@ -59,7 +62,7 @@ misl <- function(dataset,
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
         if(i == 1){
           # For the first iteration, we're using only those rows for which data exists for the variable
-          full_dataframe <- dataset[!is.na(dataset[[column]]), ]
+          full_dataframe <- new_imputed_dataset[!is.na(new_imputed_dataset[[column]]), ]
         }else{
           # After the first iteration, we can use the newly imputed dataset (which should be full)
           full_dataframe <- new_imputed_dataset
@@ -153,7 +156,7 @@ misl <- function(dataset,
         }else{
           # In this instance, the column type is categorical
           # This is depedent on what the super learner returns (predictions or predicted probabilities)
-          dataset_master_copy[[column]] <- ifelse(missing_yvar, sl3::predict_classes(sl3::unpack_predictions(predictions)), dataset[[column]])
+          dataset_master_copy[[column]] <-  as.factor(ifelse(missing_yvar, as.character(sl3::predict_classes(sl3::unpack_predictions(predictions))), as.character(dataset[[column]])))
         }
 
         # We can set this column back in the dataframe and move on to the next.
