@@ -1,4 +1,4 @@
-check_dataype <- function(x){
+check_datatype <- function(x){
   datatype <- class(x)
   if(class(x) == "factor"){
     return("categorical")

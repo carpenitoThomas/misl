@@ -79,10 +79,10 @@ misl <- function(dataset,
         # Note, we include the "yvar" in this iteration though nothing should be imputed for this column (since we subsetted with respect to it being full)
         # It would be easy to define this column type as a variable.
         for(column_number in seq_along(full_dataframe)){
-          full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
+          full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
         }
 
-        column_type <- check_dataype(dataset[[yvar]])
+        outcome_type <- check_datatype(dataset[[yvar]])
 
         # We should now have a complete dataframe and can being misl.
 
@@ -92,7 +92,7 @@ misl <- function(dataset,
         # TODO: Add Screeners?
 
         # Depending on the outcome, we need to build out the learner
-        learners <- switch(column_type,
+        learners <- switch(outcome_type,
                categorical = cat_method,
                binary = bin_method ,
                continuous = con_method)
@@ -119,20 +119,18 @@ misl <- function(dataset,
           for(column_number in seq_along(dataset_copy)){
             # This is a check to see if the column is a factor, requiring mode imputation
             # This means that the column should be registered as a factor.
-            if(class(dataset_copy[[column_number]]) == "factor"){
-              dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[[column_number]])
-              column_type <- "categorical"
+            column_type <- check_datatype(dataset[[column_number]])
+            if(column_type == "categorical"){
+              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
             }else{
               # We assume now that we have some continuous variable... BUT this variable could be binary or continuous
               # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
               # This function is incomplete in its checks...
-              if(length(levels(as.factor(dataset_copy[,column_number]))) == 2){
-                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[[column_number]])
-                column_type <- "binary"
+              if(column_type == "binary"){
+                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
               }else{
                 # Here, we assume a continuous variable and can use simple mean or median imputation
-                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
-                column_type <- "continuous"
+                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
               }
             }
           }
@@ -146,13 +144,12 @@ misl <- function(dataset,
 
         # Once we have the predictions we can replace the missing values from the original dataframe
         # Note, we add a bit of random noise here
-        if(column_type == "binary"){
+        if(outcome_type == "binary"){
           predicted_values <- rbinom(length(dataset_master_copy[[column]]), 1, predictions)
           dataset_master_copy[[column]] <- ifelse(missing_yvar, predicted_values, dataset[[column]])
 
-        }else if(column_type == "continuous"){
+        }else if(outcome_type == "continuous"){
           dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions + rnorm(n = length(predictions), mean = 0, sd = sd(predictions) ), dataset[[column]])
-
         }else{
           # In this instance, the column type is categorical
           # This is depedent on what the super learner returns (predictions or predicted probabilities)
