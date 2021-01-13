@@ -43,9 +43,6 @@ misl <- function(dataset,
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
 
-    # Create the newly imputed dataset
-    new_imputed_dataset <- dataset
-
     # Next, we begin the iterations within each dataset.
     for(i in seq_along(1:maxit)){
 
@@ -62,10 +59,10 @@ misl <- function(dataset,
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
         if(i == 1){
           # For the first iteration, we're using only those rows for which data exists for the variable
-          full_dataframe <- new_imputed_dataset[!is.na(new_imputed_dataset[[column]]), ]
+          full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
         }else{
           # After the first iteration, we can use the newly imputed dataset (which should be full)
-          full_dataframe <- new_imputed_dataset
+          full_dataframe <- dataset_master_copy
         }
 
         # Next identify the predictors (x vars) and outcome (y var) depending on the column imputing
@@ -150,7 +147,6 @@ misl <- function(dataset,
         if(outcome_type == "binary"){
           predicted_values <- rbinom(length(dataset_master_copy[[column]]), 1, predictions)
           dataset_master_copy[[column]] <- ifelse(missing_yvar, predicted_values, dataset[[column]])
-
         }else if(outcome_type == "continuous"){
           dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions + rnorm(n = length(predictions), mean = 0, sd = sd(predictions) ), dataset[[column]])
         }else{
@@ -158,9 +154,6 @@ misl <- function(dataset,
           # This is depedent on what the super learner returns (predictions or predicted probabilities)
           dataset_master_copy[[column]] <-  as.factor(ifelse(missing_yvar, as.character(sl3::predict_classes(sl3::unpack_predictions(predictions))), as.character(dataset[[column]])))
         }
-
-        # We can set this column back in the dataframe and move on to the next.
-        new_imputed_dataset <- dataset_master_copy
 
         # Lastly, we should remove the learners for the next column (should there be overlap)
         for(learner in learner_list){
@@ -174,7 +167,7 @@ misl <- function(dataset,
 
     }
     # After all columns are imputed, we can save the dataset for recall later
-    imputed_datasets[[m_loop]] <- new_imputed_dataset
+    imputed_datasets[[m_loop]] <- dataset_master_copy
   }
   return(imputed_datasets)
 }
