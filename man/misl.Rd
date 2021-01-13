@@ -10,7 +10,7 @@ misl(
   maxit = 5,
   seed = NA,
   con_method = c("Lrnr_mean", "Lrnr_glm"),
-  bin_method = c("Lrnr_mean", "Lrnr_glmnet"),
+  bin_method = c("Lrnr_mean", "Lrnr_glm"),
   cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
   missing_default = "mean",
   quiet = FALSE
