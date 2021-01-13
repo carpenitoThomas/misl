@@ -34,44 +34,12 @@ and then pool the results:
 
 ``` r
 library(misl)
-library(mice)
-#> 
-#> Attaching package: 'mice'
-#> The following objects are masked from 'package:base':
-#> 
-#>     cbind, rbind
 
-misl_imp <- misl(mice::nhanes, maxit = 2, m = 2)
-#> [1] "Imputing dataset: 1"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: age"
-#> [1] "Imputing: hyp"
-#> [1] "Imputing: bmi"
-#> [1] "Imputing: chl"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: age"
-#> [1] "Imputing: hyp"
-#> [1] "Imputing: bmi"
-#> [1] "Imputing: chl"
-#> [1] "Imputing dataset: 2"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: age"
-#> [1] "Imputing: hyp"
-#> [1] "Imputing: bmi"
-#> [1] "Imputing: chl"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: age"
-#> [1] "Imputing: hyp"
-#> [1] "Imputing: bmi"
-#> [1] "Imputing: chl"
+misl_imp <- misl(nhanes, maxit = 2, m = 2)
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(bmi ~ hyp + chl, data = y)
 })
 
 summary(mice::pool(misl_modeling))
-#>          term    estimate  std.error  statistic       df     p.value
-#> 1 (Intercept) 20.84723093 4.32108249  4.8245390 14.56379 0.000241836
-#> 2         hyp -0.52786921 1.92793610 -0.2738002 16.83378 0.787569392
-#> 3         chl  0.03156849 0.02245913  1.4055977 19.61482 0.175486020
 ```

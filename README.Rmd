@@ -38,11 +38,10 @@ devtools::install_github("carpenitoThomas/MISL")
 
 Here's an example with the nhanes data in which we use MISL imputation and then pool the results:
 
-```{r example, cache = TRUE}
+```{r example, eval = FALSE}
 library(misl)
-library(mice)
 
-misl_imp <- misl(mice::nhanes, maxit = 2, m = 2)
+misl_imp <- misl(nhanes, maxit = 2, m = 2)
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(bmi ~ hyp + chl, data = y)

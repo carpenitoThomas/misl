@@ -1,0 +1,1 @@
+load("/Users/thomascarpenito/Documents/programming/misl/data-raw/nhanes.rds")

@@ -19,7 +19,7 @@ misl <- function(dataset,
                  maxit = 5,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
-                 bin_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 bin_method = c("Lrnr_mean", "Lrnr_glm"),
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  missing_default = "mean",
                  quiet = FALSE
@@ -78,12 +78,11 @@ misl <- function(dataset,
         # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well upon successive iterations.
         # Note, we include the "yvar" in this iteration though nothing should be imputed for this column (since we subsetted with respect to it being full)
         # It would be easy to define this column type as a variable.
-        column_type <- NULL
         for(column_number in seq_along(full_dataframe)){
           full_dataframe[is.na(full_dataframe[,column_number]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
         }
 
-        column_type <- "continuous"
+        column_type <- check_dataype(dataset[[yvar]])
 
         # We should now have a complete dataframe and can being misl.
 
@@ -121,18 +120,18 @@ misl <- function(dataset,
             # This is a check to see if the column is a factor, requiring mode imputation
             # This means that the column should be registered as a factor.
             if(class(dataset_copy[[column_number]]) == "factor"){
-              dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[,column_number])
+              dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[[column_number]])
               column_type <- "categorical"
             }else{
               # We assume now that we have some continuous variable... BUT this variable could be binary or continuous
               # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
               # This function is incomplete in its checks...
               if(length(levels(as.factor(dataset_copy[,column_number]))) == 2){
-                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[,column_number])
+                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  impute_mode(dataset_copy[[column_number]])
                 column_type <- "binary"
               }else{
                 # Here, we assume a continuous variable and can use simple mean or median imputation
-                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  get(missing_default)(dataset_copy[,column_number], na.rm = TRUE)
+                dataset_copy[is.na(dataset_copy[,column_number]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
                 column_type <- "continuous"
               }
             }
@@ -157,7 +156,7 @@ misl <- function(dataset,
         }else{
           # In this instance, the column type is categorical
           # This is depedent on what the super learner returns (predictions or predicted probabilities)
-          dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions, dataset[[column]])
+          dataset_master_copy[[column]] <- ifelse(missing_yvar, sl3::predict_classes(sl3::unpack_predictions(predictions)), dataset[[column]])
         }
 
         # We can set this column back in the dataframe and move on to the next.

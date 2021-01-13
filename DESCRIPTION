@@ -19,3 +19,5 @@ Imports:
     sl3,
     dplyr,
     stats
+Depends: 
+    R (>= 2.10)
