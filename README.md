@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# misl
+# Multiple Imputation by Super Learning (MISL)
 
 <!-- badges: start -->
 
@@ -29,8 +29,8 @@ devtools::install_github("carpenitoThomas/misl")
 
 ## Example
 
-Here’s an example with the nhanes data in which we use MISL imputation
-and then pool the results:
+Here’s an example with the nhanes data in which we use `misl()`
+imputation and then pool the results:
 
 ``` r
 library(misl)
@@ -43,23 +43,23 @@ misl_modeling <- lapply(misl_imp, function(y){
 
 summary(mice::pool(misl_modeling))
 #>                      term     estimate    std.error  statistic         df
-#> 1             (Intercept)  4.565795636 0.1149755505 39.7110135 101.400312
-#> 2                     Age  0.015125596 0.0006390698 23.6681459 819.118545
-#> 3                  Weight  0.003125892 0.0006397174  4.8863643 221.247354
-#> 4                  Height -0.004391819 0.0010196632 -4.3071276 127.385581
-#> 5                Smoke100  0.011292815 0.0316854873  0.3564034   7.499389
-#> 6 Education9 - 11th Grade  0.231236488 0.0600430448  3.8511786  38.353163
-#> 7   EducationCollege Grad  0.263022444 0.0535395971  4.9126713  58.777697
-#> 8    EducationHigh School  0.234936239 0.0554150897  4.2395716  33.353266
-#> 9   EducationSome College  0.081504768 0.0453715024  1.7963868  66.029501
+#> 1             (Intercept)  4.560484400 0.1099404608 41.4814016 5640.49527
+#> 2                     Age  0.015079860 0.0006320319 23.8593349 2896.66633
+#> 3                  Weight  0.003201187 0.0006235016  5.1342077 3172.42226
+#> 4                  Height -0.004502931 0.0009800801 -4.5944521 6089.20706
+#> 5                Smoke100  0.018157167 0.0273859752  0.6630097   45.68105
+#> 6 Education9 - 11th Grade  0.243570874 0.0556668340  4.3755115 1259.79710
+#> 7   EducationCollege Grad  0.278377007 0.0519941733  5.3540039  167.89103
+#> 8    EducationHigh School  0.253036015 0.0519685203  4.8690248  262.05890
+#> 9   EducationSome College  0.101243631 0.0444235646  2.2790524  139.08709
 #>        p.value
 #> 1 0.000000e+00
 #> 2 0.000000e+00
-#> 3 1.970862e-06
-#> 4 3.273947e-05
-#> 5 7.313563e-01
-#> 6 4.337178e-04
-#> 7 7.527704e-06
-#> 8 1.668987e-04
-#> 9 7.700736e-02
+#> 3 3.004145e-07
+#> 4 4.426319e-06
+#> 5 5.106562e-01
+#> 6 1.311608e-05
+#> 7 2.793126e-07
+#> 8 1.940894e-06
+#> 9 2.418660e-02
 ```

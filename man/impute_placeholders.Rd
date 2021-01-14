@@ -7,7 +7,11 @@
 impute_placeholders(dataset, column_number, missing_default)
 }
 \arguments{
-\item{dataset}{}
+\item{dataset}{The dataset to which placeholders are filled.}
+
+\item{column_number}{The specific column within the dataset that is to be filled.}
+
+\item{missing_default}{A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.}
 }
 \value{
 

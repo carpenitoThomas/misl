@@ -1,5 +1,5 @@
 Package: misl
-Title: Performs multiple imputation using the super learning framework.
+Title: Performs multiple imputation using the super learning framework
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Thomas",

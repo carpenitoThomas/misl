@@ -1,14 +1,14 @@
 #' Imputes missing values using multiple imputation by super learning
 #'
-#' @param dataset
-#' @param m
-#' @param maxit
-#' @param seed
-#' @param con_method
-#' @param bin_method
-#' @param cat_method
-#' @param missing_default
-#' @param quiet
+#' @param dataset A dataframe or matrix containing the incomplete data. Missing values are represented with \code{NA}.
+#' @param m The number of multiply imputed datasets to create. The default is \code{m=5}.
+#' @param maxit The number of iterations for each of the \code{m} imputed datasets. The default is \code{maxit=5}.
+#' @param seed Specify whether or not to include a seed for reproducible research. The default is \code{seed = NA}.
+#' @param con_method A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}.
+#' @param bin_method A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.
+#' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
+#' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
+#' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #'
 #' @return
 #' @export
@@ -44,9 +44,9 @@ misl <- function(dataset,
     dataset_master_copy <- dataset
 
     # Next, we begin the iterations within each dataset.
-    for(i in seq_along(1:maxit)){
+    for(i_loop in seq_along(1:maxit)){
 
-      if(!quiet){print(paste("Imputing iteration:", i))}
+      if(!quiet){print(paste("Imputing iteration:", i_loop))}
 
       # Begin the iteration column by column
       for(column in column_order){
@@ -59,7 +59,7 @@ misl <- function(dataset,
 
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
-        if(i == 1){
+        if(i_loop == 1){
           # For the first iteration, we're using only those rows for which data exists for the variable
           full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
         }else{
@@ -118,7 +118,7 @@ misl <- function(dataset,
 
         ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE ELSE CONDITIONAL?
         # And finally obtain predictions from the stack on the updated dataset
-        if(i == 1){
+        if(i_loop == 1){
           dataset_copy <- dataset_master_copy
           for(column_number in seq_along(dataset_copy)){
             # This is a check to see if the column is a factor, requiring mode imputation
@@ -149,10 +149,10 @@ misl <- function(dataset,
         # Once we have the predictions we can replace the missing values from the original dataframe
         # Note, we add a bit of random noise here
         if(outcome_type == "binary"){
-          predicted_values <- rbinom(length(dataset_master_copy[[column]]), 1, predictions)
+          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
           dataset_master_copy[[column]] <- ifelse(missing_yvar, predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
-          dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions + rnorm(n = length(predictions), mean = 0, sd = sd(predictions) ), dataset[[column]])
+          dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
         }else{
           # In this instance, the column type is categorical
           # This is depedent on what the super learner returns (predictions or predicted probabilities)

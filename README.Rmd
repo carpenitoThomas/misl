@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# misl
+# Multiple Imputation by Super Learning (MISL)
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -36,9 +36,9 @@ devtools::install_github("carpenitoThomas/misl")
 ```
 ## Example
 
-Here's an example with the nhanes data in which we use MISL imputation and then pool the results:
+Here's an example with the nhanes data in which we use `misl()` imputation and then pool the results:
 
-```{r example, cache = TRUE}
+```{r example}
 library(misl)
 
 misl_imp <- misl(nhanes, maxit = 2, m = 2, quiet = TRUE)

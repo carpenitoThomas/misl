@@ -1,6 +1,8 @@
 #' Imputes placeholders in the current dataset
 #'
-#' @param dataset
+#' @param dataset The dataset to which placeholders are filled.
+#' @param column_number The specific column within the dataset that is to be filled.
+#' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #'
 #' @return
 #' @export
