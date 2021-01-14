@@ -1,2 +1,5 @@
+.Rhistory
+.RData
+.DS_Store
+mice.Rproj
 .Rproj.user
-README_cache/
