@@ -25,7 +25,7 @@ misl <- function(dataset,
                  quiet = FALSE
                  ){
 
-  # TO ADD: checks that we can actually begin the MISL algorithm.
+  # TODO: checks that we can actually begin the MISL algorithm.
 
   # Initialize the return object (or, the dataframes that we want to return)
   imputed_datasets <- vector("list", m)
@@ -37,7 +37,7 @@ misl <- function(dataset,
     if(!quiet){print(paste("Imputing dataset:", m_loop))}
 
     # Identify which order the columns should be imputed.
-    # The order here specifies most missing data to least though the order should not be important (per MICE).
+    # The order here specifies least missing data to most though the order should not be important (per MICE).
     column_order <- colnames(dataset)[order(colSums(is.na(dataset)))]
 
     # Retain a copy of the dataset for each of the new m datasets
@@ -46,14 +46,16 @@ misl <- function(dataset,
     # Next, we begin the iterations within each dataset.
     for(i in seq_along(1:maxit)){
 
-      # Do users want to know which iteration they are imputing?
       if(!quiet){print(paste("Imputing iteration:", i))}
 
       # Begin the iteration column by column
       for(column in column_order){
 
-        # Print what column we are starting with
         if(!quiet){print(paste("Imputing:", column))}
+
+        ####### CAN I KEEP JUST THE FOLLOWING CODE INSTEAD OF THE IF/ELSE
+        # full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+        # I should test this
 
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
@@ -65,9 +67,9 @@ misl <- function(dataset,
           full_dataframe <- dataset_master_copy
         }
 
-        # Next identify the predictors (x vars) and outcome (y var) depending on the column imputing
-        yvar <- column
+        # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(full_dataframe[ , -which(names(full_dataframe) %in% c(column)), drop = FALSE])
+        yvar <- column
 
         # We need to keep track of which values from the original dataframe are missing
         # This is important becuase after the first iteration NONE of the values will be classified as missing
@@ -82,16 +84,17 @@ misl <- function(dataset,
           full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
         }
 
-        outcome_type <- check_datatype(dataset[[yvar]])
+        # We should now have a complete dataframe and can begin misl.
 
-        # We should now have a complete dataframe and can being misl.
+        # Specifying the outcome_type will be helpful for checking learners.
+        outcome_type <- check_datatype(dataset[[yvar]])
 
         # First, define the task
         task <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar)
 
         # TODO: Add Screeners?
 
-        # Depending on the outcome, we need to build out the learner
+        # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
                categorical = cat_method,
                binary = bin_method ,
@@ -113,7 +116,8 @@ misl <- function(dataset,
         sl <- sl3::Lrnr_sl$new(learners = stack)
         stack_fit <- sl$train(task)
 
-        # And finally obtain predictions from the stack on the full dataframe
+        ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE ELSE CONDITIONAL?
+        # And finally obtain predictions from the stack on the updated dataset
         if(i == 1){
           dataset_copy <- dataset_master_copy
           for(column_number in seq_along(dataset_copy)){
@@ -161,9 +165,7 @@ misl <- function(dataset,
           eval(parse(text=code.lm))
         }
 
-
       }
-
 
     }
     # After all columns are imputed, we can save the dataset for recall later
