@@ -8,8 +8,10 @@ library(usethis)
 load('data-raw/nhanes.rdata')
 
 nhanes <- NHANES %>%
-  select(c(Age, Weight, Height, TotChol, Smoke100, Education)) %>%
-  mutate(Smoke100 = ifelse(Smoke100 == "No", 0, 1))
+  select(c(ID, Age, Weight, Height, TotChol, Smoke100, Education)) %>%
+  mutate(Smoke100 = ifelse(Smoke100 == "No", 0, 1)) %>%
+  distinct %>%
+  select(-ID)
 
 
 
