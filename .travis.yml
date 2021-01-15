@@ -1,1 +1,40 @@
+branches:
+  only:
+  - master
+
+env:
+  global:
+  - RGL_USE_NULL=TRUE
+  - PKG_CFLAGS="-O3 -Wall -pedantic"
+
 language: R
+sudo: required
+cache: packages
+cran: http://cran.rstudio.com
+warnings_are_errors: true
+r_build_args: "--no-manual"
+r_check_args: "--no-build-vignettes --no-manual"
+
+r:
+  - release
+  - devel
+
+
+r_packages:
+  - devtools
+  - covr
+  - sessioninfo
+  - data.table
+  - sl3
+
+r_github_packages:
+  - r-lib/covr
+  - r-lib/sessioninfo
+  - osofr/simcausal
+  - osofr/condensier
+  - tlverse/origami
+  - tlverse/delayed
+  - tlverse/hal9001
+  - nhejazi/haldensify
+  - tpospisi/cdetools/r
+  - tpospisi/RFCDE/r
