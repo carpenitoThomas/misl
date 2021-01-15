@@ -3,9 +3,12 @@
 
 # Multiple Imputation by Super Learning (MISL)
 
-<!-- badges: start -->
-
-<!-- badges: end -->
+[![Travis-CI Build
+Status](https://travis-ci.com/carpenitoThomas/misl.svg?token=u9TyfsxVjq6xxvc5h473&branch=master)](https://travis-ci.com/carpenitoThomas/misl)
+[![Coverage
+Status](https://codecov.io/gh/carpenitoThomas/misl/branch/master/graph/badge.svg?token=C157LCBBJI)](https://codecov.io/gh/carpenitoThomas/misl)
+[![License: GPL
+v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 The goal of MISL (Multiple Imputation by Super Learning) is to create
 multiply imputed datasets using the super learning framework. This
@@ -42,24 +45,24 @@ misl_modeling <- lapply(misl_imp, function(y){
 })
 
 summary(mice::pool(misl_modeling))
-#>                      term     estimate    std.error  statistic         df
-#> 1             (Intercept)  4.560484400 0.1099404608 41.4814016 5640.49527
-#> 2                     Age  0.015079860 0.0006320319 23.8593349 2896.66633
-#> 3                  Weight  0.003201187 0.0006235016  5.1342077 3172.42226
-#> 4                  Height -0.004502931 0.0009800801 -4.5944521 6089.20706
-#> 5                Smoke100  0.018157167 0.0273859752  0.6630097   45.68105
-#> 6 Education9 - 11th Grade  0.243570874 0.0556668340  4.3755115 1259.79710
-#> 7   EducationCollege Grad  0.278377007 0.0519941733  5.3540039  167.89103
-#> 8    EducationHigh School  0.253036015 0.0519685203  4.8690248  262.05890
-#> 9   EducationSome College  0.101243631 0.0444235646  2.2790524  139.08709
+#>                      term     estimate    std.error  statistic          df
+#> 1             (Intercept)  4.538036722 0.1100107675 41.2508414 6766.866150
+#> 2                     Age  0.015071298 0.0006294279 23.9444401 5655.218861
+#> 3                  Weight  0.003012577 0.0006246664  4.8226974 1347.834327
+#> 4                  Height -0.004199229 0.0010352553 -4.0562254   87.446555
+#> 5                Smoke100  0.013687362 0.0260768931  0.5248847  261.827194
+#> 6 Education9 - 11th Grade  0.240174045 0.0748621356  3.2082179    4.732437
+#> 7   EducationCollege Grad  0.268423116 0.0691709244  3.8805773    4.368908
+#> 8    EducationHigh School  0.241742271 0.0696531638  3.4706574    4.392088
+#> 9   EducationSome College  0.087841421 0.0718903513  1.2218805    2.370217
 #>        p.value
 #> 1 0.000000e+00
 #> 2 0.000000e+00
-#> 3 3.004145e-07
-#> 4 4.426319e-06
-#> 5 5.106562e-01
-#> 6 1.311608e-05
-#> 7 2.793126e-07
-#> 8 1.940894e-06
-#> 9 2.418660e-02
+#> 3 1.577216e-06
+#> 4 1.080386e-04
+#> 5 6.001075e-01
+#> 6 2.570262e-02
+#> 7 1.508099e-02
+#> 8 2.199388e-02
+#> 9 3.292862e-01
 ```
