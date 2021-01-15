@@ -38,3 +38,6 @@ r_github_packages:
   - nhejazi/haldensify
   - tpospisi/cdetools/r
   - tpospisi/RFCDE/r
+
+after_success:
+  - Rscript -e 'library(covr); codecov()'
