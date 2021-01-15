@@ -1,0 +1,21 @@
+language: R
+sudo: required
+cache: packages
+cran: http://cran.rstudio.com
+warnings_are_errors: true
+r_build_args: "--no-manual"
+r_check_args: "--no-build-vignettes --no-manual"
+
+r:
+  - release
+  - devel
+
+r_packages:
+  - devtools
+  - covr
+  - sessioninfo
+  - data.table
+
+r_github_packages:
+  - r-lib/covr
+  - r-lib/sessioninfo
