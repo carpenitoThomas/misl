@@ -2,28 +2,14 @@ branches:
   only:
   - master
 
-
-language: R
+language: r
 
 cran: http://cran.rstudio.com
-warnings_are_errors: true
-
-r:
-  - release
-  - devel
 
 r_github_packages:
   - r-lib/covr
   - r-lib/sessioninfo
-  - osofr/simcausal
-  - osofr/condensier
   - tlverse/sl3
-  - tlverse/origami
-  - tlverse/delayed
-  - tlverse/hal9001
-  - nhejazi/haldensify
-  - tpospisi/cdetools/r
-  - tpospisi/RFCDE/r
 
 after_success:
   - Rscript -e 'library(covr); codecov()'
