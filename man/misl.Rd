@@ -36,7 +36,7 @@ misl(
 \item{quiet}{A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.}
 }
 \value{
-A list of \code{m} tibbles.
+A list of \code{m} full tibbles.
 }
 \description{
 Imputes missing values using multiple imputation by super learning

@@ -1,0 +1,21 @@
+---
+title: "misl"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{misl}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+The following 
+
+```{r setup}
+library(misl)
+```

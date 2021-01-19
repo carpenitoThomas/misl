@@ -10,7 +10,7 @@
 #' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #'
-#' @return A list of \code{m} tibbles.
+#' @return A list of \code{m} full tibbles.
 #' @export
 #'
 #' @examples
