@@ -14,8 +14,97 @@ knitr::opts_chunk$set(
 )
 ```
 
-The following 
+Multiple Imputation by Super Learning (misl) is a highly customizable novel technique for (appropriately) handling missingness in a dataset. The following vignette will detail the workflow one may adopt when carrying out an analysis and how one can use the `misl` package.
 
-```{r setup}
+# Data Import and Setup
+
+The initial setup for this analysis involves loading the `misl` and `tidyverse` packages required for this analysis.
+
+```{r, echo= TRUE, message=FALSE}
 library(misl)
+library(tidyverse)
+library(mice)
+library(sl3)
 ```
+
+For this particular analysis we will using a subset of the NHANES (2009 - 2012) data made available from the NHANES package itlsef.
+
+```{r}
+nhanes <- misl::nhanes
+```
+
+We can look at the first few rows of the nhanes dataset to get a better idea of what we types of data we are working with:
+
+```{r}
+head(nhanes)
+```
+
+As we can see there are 6 columns of which 4 are continuous (Age, Weight, Height, and TotChol), 1 is binary  (Smoke100) and 1 is categorical (Education). We can also see from this previous there is a bit of missing data, but what is the percentage of missing information per column:
+
+```{r}
+round(colSums(is.na(nhanes)) / nrow(nhanes), 2)
+```
+
+Actually, the `mice` package has a really nice function to view the amount of missing data per dataset:
+
+```{r}
+mice::md.pattern(nhanes, rotate.names = TRUE)
+```
+
+In total, there are `r nrow(nhanes)` observations in our dataset. This means that we have 4,337 complete observations, or approximately `r (4337 / nrow(nhanes)) * 100`% of our data is complete. At this point it may be tempting to do a complete case analysis BUT that would not be advisable - this package hopes to make multiple imputation an easy pitstop on the way to inference.
+
+
+# Question of Interest / Modeling
+
+As with any analysis, before we begin we should (ideally) come up a question of interest. For this particular dataset, I am going to say that we are interested in obtaining inference on the relationship between an individual's: Age, Weight, Height, Smoking Status, and Education and their Cholesterol levels. More explicitly, we are interested in the following linear model:
+
+$$\text{TotChol} = \beta_0 + \beta_1 \times Age + \beta_2 \times Weight + \beta_3 \times Height + \beta_4 \times Smoke100 + \beta_5 \times Education + \epsilon$$
+
+
+# Analysis
+
+In order for us to carry out the multiple imputation, we need to specify a few options in our function.
+
+__m__: The number of datasets to impute. The default is 5.
+
+__maxit__: How many iterations would you like to have completed before the aglorithm is to have (assumed) convergence? The default here is 5.
+
+__con_method__: This parameter allows us to select which learners we would like to include for when imputing our continuous variables. To make this choice, we must think carefully about which models (both parametric and non-parametric) we would like to consider. A list of available choices can be viewed using the `sl3` package function as follows:
+
+```{r}
+sl3::sl3_list_learners("continuous")
+```
+
+__bin_method__: This parameter allows us to select which learners we would like to include for when imputing our binary variables. A list of available choices can be viewed using the `sl3` package function as follows:
+
+```{r}
+sl3::sl3_list_learners("binomial")
+```
+
+__cat_method__: This parameter allows us to select which learners we would like to include for when imputing our categorical variables. A list of available choices can be viewed using the `sl3` package function as follows:
+
+```{r}
+sl3::sl3_list_learners("categorical")
+```
+
+__missing_default__: This parameter tells our algorithm how to input missing values for super learning. In reality, altering this parameter will have little to no effect on final predictions. The default imputation placeholder is set to mean imputation.
+
+Next, we are finally ready to begin building our imputation model:
+
+```{r}
+a_misl_imputations <- misl(dataset = nhanes,
+                         m = 1, 
+                         maxit = 5,
+                         con_method = c("Lrnr_mean", "Lrnr_glm", "Lrnr_gam", "Lrnr_svm", "Lrnr_ranger"),
+                         bin_method = c("Lrnr_mean", "Lrnr_glm", "Lrnr_earth"),
+                         cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                         quiet = TRUE
+                         )
+```
+
+For this analysis we decided to choose the following learners for our continuous variables: mean, glm, gam, svm, and ranger.
+
+For our categorical variable: mean and glmnet
+
+And for our binary variable: mean, glm, and earth.
+
