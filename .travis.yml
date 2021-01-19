@@ -7,6 +7,9 @@ language: r
 cran: http://cran.rstudio.com
 warnings_are_errors: false
 
+r_packages:
+  - Rsolnp
+
 r_github_packages:
   - r-lib/covr
   - r-lib/sessioninfo

@@ -43,6 +43,6 @@ Imputes missing values using multiple imputation by super learning
 }
 \examples{
 # This will generate imputations for the built-in nhanes dataset.
-misl_imp <- misl(nhanes)
+misl_imp <- misl(nhanes, m = 1)
 
 }
