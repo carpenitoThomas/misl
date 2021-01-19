@@ -11,7 +11,7 @@ misl(
   seed = NA,
   con_method = c("Lrnr_mean", "Lrnr_glm"),
   bin_method = c("Lrnr_mean", "Lrnr_glm"),
-  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+  cat_method = c("Lrnr_mean", "Lrnr_xgboost"),
   missing_default = "mean",
   quiet = FALSE
 )
@@ -29,15 +29,20 @@ misl(
 
 \item{bin_method}{A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.}
 
-\item{cat_method}{A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.}
+\item{cat_method}{A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_xgboost")}.}
 
 \item{missing_default}{A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.}
 
 \item{quiet}{A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.}
 }
 \value{
-
+A list of \code{m} tibbles.
 }
 \description{
 Imputes missing values using multiple imputation by super learning
+}
+\examples{
+# This will generate imputations for the built-in nhanes dataset.
+misl_imp <- misl(nhanes)
+
 }

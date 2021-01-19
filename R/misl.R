@@ -6,21 +6,24 @@
 #' @param seed Specify whether or not to include a seed for reproducible research. The default is \code{seed = NA}.
 #' @param con_method A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}.
 #' @param bin_method A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.
-#' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
+#' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_xgboost")}.
 #' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #'
-#' @return
+#' @return A list of \code{m} tibbles.
 #' @export
 #'
 #' @examples
+#' # This will generate imputations for the built-in nhanes dataset.
+#' misl_imp <- misl(nhanes)
+#'
 misl <- function(dataset,
                  m = 5,
                  maxit = 5,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
-                 cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 cat_method = c("Lrnr_mean", "Lrnr_xgboost"),
                  missing_default = "mean",
                  quiet = FALSE
                  ){

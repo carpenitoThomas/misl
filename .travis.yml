@@ -17,7 +17,7 @@ r_github_packages:
   - r-lib/sessioninfo
   - osofr/simcausal
   - osofr/condensier
-  - tllverse/sl3
+  - tlverse/sl3
   - tlverse/origami
   - tlverse/delayed
   - tlverse/hal9001
