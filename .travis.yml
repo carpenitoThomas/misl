@@ -5,6 +5,7 @@ branches:
 language: r
 
 cran: http://cran.rstudio.com
+warnings_are_errors: false
 
 r_github_packages:
   - r-lib/covr
@@ -13,3 +14,4 @@ r_github_packages:
 
 after_success:
   - Rscript -e 'library(covr); codecov()'
+
