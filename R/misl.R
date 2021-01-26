@@ -29,6 +29,7 @@ misl <- function(dataset,
                  ){
 
   # TODO: checks that we can actually begin the MISL algorithm.
+  check_dataset()
 
   # Initialize the return object (or, the dataframes that we want to return)
   imputed_datasets <- vector("list", m)

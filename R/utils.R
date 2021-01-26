@@ -1,3 +1,10 @@
+check_dataset <- function(dataset){
+  if(colSums(is.na(dataset)) == 0){
+    stop("Your dataset is complete, no need for MISL!")
+  }
+}
+
+
 check_datatype <- function(x){
   datatype <- class(x)
   if(class(x) == "factor"){
