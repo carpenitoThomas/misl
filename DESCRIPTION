@@ -21,7 +21,9 @@ Suggests:
 Imports: 
     sl3,
     dplyr,
-    stats
+    stats,
+    future,
+    delayed
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr

@@ -9,6 +9,7 @@
 #' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
 #' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
+#' @param multisession A boolean describing if the process should be run in paralell. This will speed up your code but at the expense of computing power. The default is \code{quiet = FALSE}.
 #'
 #' @return A list of \code{m} full tibbles.
 #' @export
@@ -25,7 +26,8 @@ misl <- function(dataset,
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  missing_default = "mean",
-                 quiet = FALSE
+                 quiet = FALSE,
+                 multisession = FALSE
                  ){
 
   # TODO: checks that we can actually begin the MISL algorithm.
@@ -117,8 +119,18 @@ misl <- function(dataset,
         eval(parse(text=learner_stack_code))
 
         # Then we make and train the Super Learner
+        # This was a bottleneck for past simulations and we are introducing multisession parellelization
         sl <- sl3::Lrnr_sl$new(learners = stack)
-        stack_fit <- sl$train(task)
+
+        if(multisession){
+          future::plan(future::multisession)
+          test <- sl3::delayed_learner_train(sl, task)
+
+          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE)
+          stack_fit <- sched$compute()
+        }else{
+          stack_fit <- sl$train(task)
+        }
 
         ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE ELSE CONDITIONAL?
         # And finally obtain predictions from the stack on the updated dataset
@@ -146,7 +158,6 @@ misl <- function(dataset,
           dataset_copy <- full_dataframe
         }
 
-
         new_prediction_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
         predictions <- stack_fit$predict(new_prediction_task)
 
@@ -170,8 +181,8 @@ misl <- function(dataset,
         }
 
       }
-
     }
+
     # After all columns are imputed, we can save the dataset for recall later
     imputed_datasets[[m_loop]] <- dataset_master_copy
   }
