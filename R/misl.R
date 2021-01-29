@@ -19,8 +19,8 @@
 #' misl_imp <- misl(nhanes, m = 1)
 #'
 misl <- function(dataset,
-                 m = 5,
-                 maxit = 5,
+                 m = 2,
+                 maxit = 2,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
@@ -121,12 +121,13 @@ misl <- function(dataset,
         # Then we make and train the Super Learner
         # This was a bottleneck for past simulations and we are introducing multisession parellelization
         sl <- sl3::Lrnr_sl$new(learners = stack)
+        cpus_physical <-as.numeric(system("sysctl -n hw.physicalcpu", intern = TRUE))
 
         if(multisession){
-          future::plan(future::multisession)
+          future::plan(future::multisession, workers = cpus_physical)
           test <- sl3::delayed_learner_train(sl, task)
 
-          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE)
+          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = TRUE, nworkers = cpus_physical)
           stack_fit <- sched$compute()
         }else{
           stack_fit <- sl$train(task)
