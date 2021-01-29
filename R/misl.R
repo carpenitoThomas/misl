@@ -128,7 +128,7 @@ misl <- function(dataset,
           future::plan(future::multisession, workers = nworkers)
           test <- sl3::delayed_learner_train(sl, task)
 
-          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = TRUE, nworkers = nworkers)
+          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE, nworkers = nworkers)
           stack_fit <- sched$compute()
         }else{
           stack_fit <- sl$train(task)
