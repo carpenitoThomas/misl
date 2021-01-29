@@ -1,5 +1,5 @@
 check_dataset <- function(dataset){
-  if(colSums(is.na(dataset)) == 0){
+  if(sum(colSums(is.na(dataset)) == 0)){
     stop("Your dataset is complete, no need for MISL!")
   }
 }
