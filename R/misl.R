@@ -10,6 +10,7 @@
 #' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #' @param multisession A boolean describing if the process should be run in paralell. This will speed up your code but at the expense of computing power. The default is \code{quiet = FALSE}.
+#' @param nworkers n integer to specify how many workers you would like to use (if you are completing tasks in a multisession). The default is \code{ncores = 4}.
 #'
 #' @return A list of \code{m} full tibbles.
 #' @export
@@ -27,7 +28,8 @@ misl <- function(dataset,
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
                  missing_default = "mean",
                  quiet = FALSE,
-                 multisession = FALSE
+                 multisession = FALSE,
+                 nworkers = 4
                  ){
 
   # TODO: checks that we can actually begin the MISL algorithm.
@@ -121,13 +123,12 @@ misl <- function(dataset,
         # Then we make and train the Super Learner
         # This was a bottleneck for past simulations and we are introducing multisession parellelization
         sl <- sl3::Lrnr_sl$new(learners = stack)
-        cpus_physical <-as.numeric(system("sysctl -n hw.physicalcpu", intern = TRUE))
 
         if(multisession){
-          future::plan(future::multisession, workers = cpus_physical)
+          future::plan(future::multisession, workers = nworkers)
           test <- sl3::delayed_learner_train(sl, task)
 
-          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = TRUE, nworkers = cpus_physical)
+          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = TRUE, nworkers = nworkers)
           stack_fit <- sched$compute()
         }else{
           stack_fit <- sl$train(task)
