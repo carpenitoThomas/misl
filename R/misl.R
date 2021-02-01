@@ -176,12 +176,6 @@ misl <- function(dataset,
           dataset_master_copy[[column]] <-  as.factor(ifelse(missing_yvar, as.character(sl3::predict_classes(sl3::unpack_predictions(predictions))), as.character(dataset[[column]])))
         }
 
-        # Lastly, we should remove the learners for the next column (should there be overlap)
-        for(learner in learner_list){
-          code.lm <- paste("rm(", learner, ")", sep="")
-          eval(parse(text=code.lm))
-        }
-
       }
     }
 
