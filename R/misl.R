@@ -39,7 +39,8 @@ misl <- function(dataset,
   imputed_datasets <- vector("list", m)
 
   # This loop defines each of the imputed m datasets.
-  imputed_datasets <- lapply(seq_along(1:m), function(m_loop){
+  future::plan(future::multisession)
+  imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
     if(!quiet){print(paste("Imputing dataset:", m_loop))}

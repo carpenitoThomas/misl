@@ -23,7 +23,8 @@ Imports:
     dplyr,
     stats,
     future,
-    delayed
+    delayed,
+    future.apply
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
