@@ -39,7 +39,10 @@ misl <- function(dataset,
   imputed_datasets <- vector("list", m)
 
   # This loop defines each of the imputed m datasets.
-  future::plan(future::multisession)
+  plan(list(
+    future::tweak(future::multisession, workers = future::availableCores() %/% 4),
+    future::tweak(future::multisession, workers = 4)
+  ))
   imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
@@ -116,7 +119,7 @@ misl <- function(dataset,
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
         if(multisession){
-          future::plan(future::multisession, workers = nworkers)
+          #future::plan(future::multisession, workers = nworkers)
           test <- sl3::delayed_learner_train(sl, task)
 
           sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE, nworkers = nworkers)
