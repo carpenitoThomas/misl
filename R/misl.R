@@ -62,19 +62,9 @@ misl <- function(dataset,
 
         if(!quiet){print(paste("Imputing:", column))}
 
-        ####### CAN I KEEP JUST THE FOLLOWING CODE INSTEAD OF THE IF/ELSE
-        # full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
-        # I should test this
-
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
-        if(i_loop == 1){
-          # For the first iteration, we're using only those rows for which data exists for the variable
-          full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
-        }else{
-          # After the first iteration, we can use the newly imputed dataset (which should be full)
-          full_dataframe <- dataset_master_copy
-        }
+        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(full_dataframe[ , -which(names(full_dataframe) %in% c(column)), drop = FALSE])
