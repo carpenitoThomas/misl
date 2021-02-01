@@ -39,7 +39,7 @@ misl <- function(dataset,
   imputed_datasets <- vector("list", m)
 
   # This loop defines each of the imputed m datasets.
-  for(m_loop in seq_along(1:m)){
+  imputed_datasets <- lapply(seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
     if(!quiet){print(paste("Imputing dataset:", m_loop))}
@@ -180,7 +180,7 @@ misl <- function(dataset,
     }
 
     # After all columns are imputed, we can save the dataset for recall later
-    imputed_datasets[[m_loop]] <- dataset_master_copy
-  }
+    dataset_master_copy
+  })
   return(imputed_datasets)
 }
