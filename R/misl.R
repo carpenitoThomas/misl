@@ -39,7 +39,7 @@ misl <- function(dataset,
   imputed_datasets <- vector("list", m)
 
   # This loop defines each of the imputed m datasets.
-  plan(list(
+  future::plan(list(
     future::tweak(future::multisession, workers = future::availableCores() %/% 4),
     future::tweak(future::multisession, workers = 4)
   ))
