@@ -25,7 +25,7 @@ misl <- function(dataset,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
-                 cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 cat_method = c("Lrnr_mean", "Lrnr_glmnet", "Lrnr_randomForest"),
                  missing_default = "mean",
                  quiet = FALSE,
                  multisession = FALSE,
@@ -38,12 +38,19 @@ misl <- function(dataset,
   # Initialize the return object (or, the dataframes that we want to return)
   imputed_datasets <- vector("list", m)
 
+  # Set up the futures
+  if(multisession){
+    future::plan(future::multisession, workers = nworkers)
+  }
+
   # This loop defines each of the imputed m datasets.
-  future::plan(list(
-    future::tweak(future::multisession, workers = 16 %/% 4),
-    future::tweak(future::multisession, workers = 4)
-  ))
-  imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
+  # TODO: Add hyperthreading...
+  #future::plan(list(
+  #  future::tweak(future::multisession, workers = 16 %/% 4),
+  #  future::tweak(future::multisession, workers = 4)
+  #))
+  #imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
+  imputed_datasets <- lapply(seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
     if(!quiet){print(paste("Imputing dataset:", m_loop))}
@@ -76,7 +83,7 @@ misl <- function(dataset,
         # We need to keep track of which values from the original dataframe are missing
         # This is important becuase after the first iteration NONE of the values will be classified as missing
         # Since MISL will have imputed them. When we iterate we only want to change these values per column.
-        missing_yvar <- is.na(dataset[[column]])
+        #missing_yvar <- is.na(dataset[[column]])
 
         # For the first iteration, any missing values will need to be set to either the mean or mode of the column.
         # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well upon successive iterations.
@@ -93,8 +100,6 @@ misl <- function(dataset,
 
         # First, define the task
         task <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar)
-
-        # TODO: Add Screeners?
 
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
@@ -119,10 +124,9 @@ misl <- function(dataset,
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
         if(multisession){
-          #future::plan(future::multisession, workers = nworkers)
           test <- sl3::delayed_learner_train(sl, task)
 
-          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE, nworkers = nworkers)
+          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet, nworkers = nworkers)
           stack_fit <- sched$compute()
         }else{
           stack_fit <- sl$train(task)
@@ -161,13 +165,13 @@ misl <- function(dataset,
         # Note, we add a bit of random noise here
         if(outcome_type == "binary"){
           predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
-          dataset_master_copy[[column]] <- ifelse(missing_yvar, predicted_values, dataset[[column]])
+          dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
-          dataset_master_copy[[column]]<- ifelse(missing_yvar, predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
+          dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
         }else{
           # In this instance, the column type is categorical
           # This is depedent on what the super learner returns (predictions or predicted probabilities)
-          dataset_master_copy[[column]] <-  as.factor(ifelse(missing_yvar, as.character(sl3::predict_classes(sl3::unpack_predictions(predictions))), as.character(dataset[[column]])))
+          dataset_master_copy[[column]] <-  as.factor(ifelse(is.na(dataset[[column]]), as.character(sl3::predict_classes(sl3::unpack_predictions(predictions))), as.character(dataset[[column]])))
         }
 
       }

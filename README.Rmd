@@ -43,7 +43,7 @@ Here's an example with the nhanes data in which we use `misl()` imputation and t
 ```{r example}
 library(misl)
 
-system.time({misl_imp <- misl(nhanes, maxit = 5, m = 5, quiet = TRUE, multisession = TRUE)})
+system.time({misl_imp <- misl(nhanes, maxit = 5, m = 2, quiet = TRUE, multisession = TRUE)})
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y)
