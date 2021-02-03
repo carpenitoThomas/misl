@@ -9,8 +9,6 @@
 #' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
 #' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
-#' @param multisession A boolean describing if the process should be run in paralell. This will speed up your code but at the expense of computing power. The default is \code{quiet = FALSE}.
-#' @param nworkers n integer to specify how many workers you would like to use (if you are completing tasks in a multisession). The default is \code{ncores = 4}.
 #'
 #' @return A list of \code{m} full tibbles.
 #' @export
@@ -27,9 +25,7 @@ misl <- function(dataset,
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet", "Lrnr_randomForest"),
                  missing_default = "mean",
-                 quiet = FALSE,
-                 multisession = FALSE,
-                 nworkers = 4
+                 quiet = FALSE
                  ){
 
   # TODO: checks that we can actually begin the MISL algorithm.
@@ -38,19 +34,8 @@ misl <- function(dataset,
   # Initialize the return object (or, the dataframes that we want to return)
   imputed_datasets <- vector("list", m)
 
-  # Set up the futures
-  if(multisession){
-    future::plan(future::multisession, workers = nworkers)
-  }
-
-  # This loop defines each of the imputed m datasets.
-  # TODO: Add hyperthreading...
-  #future::plan(list(
-  #  future::tweak(future::multisession, workers = 16 %/% 4),
-  #  future::tweak(future::multisession, workers = 4)
-  #))
-  #imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
-  imputed_datasets <- lapply(seq_along(1:m), function(m_loop){
+  # This apply function defines each of the imputed m datasets
+  imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
     if(!quiet){print(paste("Imputing dataset:", m_loop))}
@@ -123,14 +108,20 @@ misl <- function(dataset,
         # This was a bottleneck for past simulations and we are introducing multisession parellelization
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
-        if(multisession){
-          test <- sl3::delayed_learner_train(sl, task)
+        # Technically I should be able to just include the delayed code and the plan should default to sequential?
+        #if(multisession){
+        #  test <- sl3::delayed_learner_train(sl, task)
 
-          sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet, nworkers = nworkers)
-          stack_fit <- sched$compute()
-        }else{
-          stack_fit <- sl$train(task)
-        }
+        #  sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet, nworkers = nworkers)
+        #  stack_fit <- sched$compute()
+        #}else{
+        #  stack_fit <- sl$train(task)
+        #}
+
+        test <- sl3::delayed_learner_train(sl, task)
+
+        sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet)
+        stack_fit <- sched$compute()
 
         ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE ELSE CONDITIONAL?
         # And finally obtain predictions from the stack on the updated dataset

@@ -40,10 +40,10 @@ devtools::install_github("carpenitoThomas/misl")
 
 Here's an example with the nhanes data in which we use `misl()` imputation and then pool the results:
 
-```{r example}
+```{r}
 library(misl)
 
-system.time({misl_imp <- misl(nhanes, maxit = 5, m = 2, quiet = TRUE, multisession = TRUE)})
+misl_imp <- misl(nhanes, maxit = 2, m = 2, quiet = TRUE)
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y)
@@ -51,3 +51,39 @@ misl_modeling <- lapply(misl_imp, function(y){
 
 summary(mice::pool(misl_modeling))
 ```
+
+This package also supports paralellization with the `future` package. One can choose to paralellize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):
+
+```{r, echo = TRUE, eval= FALSE}
+library(future)
+
+# Sequential dataset processessing, Sequential super learning  (default)
+plan(list(sequential,sequential))
+seq_seq <- misl(nhanes)
+
+# Sequential dataset processessing, paralell super learning (8) 
+plan(list(sequential,tweak(multisession, workers = 8)))
+seq_par <- misl(nhanes)
+
+# Paralelle dataset processessing (8), sequential super learning 
+plan(list(tweak(multisession, workers = 5), sequential))
+par_seq <- misl(nhanes)
+
+# paralell dataset processessing (4), paralell super learning (2) 
+plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
+par_par <- misl(nhanes)
+
+# paralell dataset processing to ensure you don't overload your computer
+plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
+par_safe <- misl(nhanes)
+
+```
+
+Reminder, paralellizing code is not a silver bullet to automate making runtime processes faster. Make sure you have an understanding of the capacity of your computer. Further information about the topology of running code in paralell can be found in the future package.
+
+
+
+
+
+
+

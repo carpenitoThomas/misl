@@ -38,31 +38,73 @@ imputation and then pool the results:
 ``` r
 library(misl)
 
-misl_imp <- misl(nhanes, maxit = 1, m = 3, quiet = TRUE)
+misl_imp <- misl(nhanes, maxit = 2, m = 2, quiet = TRUE)
+#> Warning: UNRELIABLE VALUE: Future ('future_lapply-1') unexpectedly generated
+#> random numbers without specifying argument 'future.seed'. There is a risk that
+#> those random numbers are not statistically sound and the overall results might
+#> be invalid. To fix this, specify 'future.seed=TRUE'. This ensures that proper,
+#> parallel-safe random numbers are produced via the L'Ecuyer-CMRG method. To
+#> disable this check, use 'future.seed=NULL', or set option 'future.rng.onMisuse'
+#> to "ignore".
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y)
 })
 
 summary(mice::pool(misl_modeling))
-#>                      term     estimate    std.error  statistic        df
-#> 1             (Intercept)  5.796203599 0.2834701153 20.4473180  208.7238
-#> 2                     Age  0.007709200 0.0008908660  8.6536019 3686.0959
-#> 3                  Weight  0.000632672 0.0008285656  0.7635751  254.7670
-#> 4                  Height -0.008138830 0.0018082439 -4.5009583  124.3602
-#> 5                Smoke100  0.012844816 0.0317406548  0.4046803 2960.4836
-#> 6 Education9 - 11th Grade  0.189701125 0.0687421717  2.7596033 3890.5501
-#> 7   EducationCollege Grad  0.233800587 0.0641049529  3.6471532 1087.7208
-#> 8    EducationHigh School  0.194493393 0.0643960759  3.0202678 2412.1133
-#> 9   EducationSome College  0.216553820 0.0619527697  3.4954663 3402.6398
+#>                      term     estimate    std.error  statistic         df
+#> 1             (Intercept)  4.494030741 0.1102412195 40.7654302  124.13756
+#> 2                     Age  0.015269357 0.0006330859 24.1189323 4280.52218
+#> 3                  Weight  0.003079035 0.0006194373  4.9706965 6567.65850
+#> 4                  Height -0.003891016 0.0009442594 -4.1207062 1259.11873
+#> 5                Smoke100 -0.008525189 0.0258431270 -0.3298822  314.59578
+#> 6 Education9 - 11th Grade  0.228853391 0.0595294598  3.8443720   47.82588
+#> 7   EducationCollege Grad  0.241475686 0.0520346945  4.6406669  120.18450
+#> 8    EducationHigh School  0.225179863 0.0508468337  4.4285916 2031.19361
+#> 9   EducationSome College  0.081420453 0.0425275507  1.9145343 6667.01926
 #>        p.value
-#> 1 0.0000000000
-#> 2 0.0000000000
-#> 3 0.4458270077
-#> 4 0.0000153465
-#> 5 0.6857417906
-#> 6 0.0058142480
-#> 7 0.0002777204
-#> 8 0.0025520097
-#> 9 0.0004792783
+#> 1 0.000000e+00
+#> 2 0.000000e+00
+#> 3 6.840363e-07
+#> 4 4.023961e-05
+#> 5 7.417085e-01
+#> 6 3.564632e-04
+#> 7 8.925686e-06
+#> 8 9.988893e-06
+#> 9 5.559468e-02
 ```
+
+This package also supports paralellization with the `future` package.
+One can choose to paralellize either the outside creation of datasets or
+the learners in the super learner library (or both\!). The following
+snippet explains how this can be accomplished with four test-case
+scenarios (with an assumption that our computer has 8 cores):
+
+``` r
+library(future)
+
+# Sequential dataset processessing, Sequential super learning  (default)
+plan(list(sequential,sequential))
+seq_seq <- misl(nhanes)
+
+# Sequential dataset processessing, paralell super learning (8) 
+plan(list(sequential,tweak(multisession, workers = 8)))
+seq_par <- misl(nhanes)
+
+# Paralelle dataset processessing (8), sequential super learning 
+plan(list(tweak(multisession, workers = 5), sequential))
+par_seq <- misl(nhanes)
+
+# paralell dataset processessing (4), paralell super learning (2) 
+plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
+par_par <- misl(nhanes)
+
+# paralell dataset processing to ensure you don't overload your computer
+plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
+par_safe <- misl(nhanes)
+```
+
+Reminder, paralellizing code is not a silver bullet to automate making
+runtime processes faster. Make sure you have an understanding of the
+capacity of your computer. Further information about the topology of
+running code in paralell can be found in the future package.
