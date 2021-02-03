@@ -18,8 +18,8 @@
 #' misl_imp <- misl(nhanes, m = 1)
 #'
 misl <- function(dataset,
-                 m = 2,
-                 maxit = 2,
+                 m = 5,
+                 maxit = 5,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
