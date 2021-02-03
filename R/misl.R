@@ -25,7 +25,7 @@ misl <- function(dataset,
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
                  cat_method = c("Lrnr_mean", "Lrnr_glmnet", "Lrnr_randomForest"),
                  missing_default = "mean",
-                 quiet = FALSE
+                 quiet = TRUE
                  ){
 
   # TODO: checks that we can actually begin the MISL algorithm.
