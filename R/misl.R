@@ -38,7 +38,7 @@ misl <- function(dataset,
   imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
-    if(!quiet){print(paste("Imputing dataset:", m_loop))}
+    if(!quiet){message(paste("Imputing dataset:", m_loop))}
 
     # Identify which order the columns should be imputed.
     # The order here specifies least missing data to most though the order should not be important (per MICE).
@@ -50,7 +50,7 @@ misl <- function(dataset,
     # Next, we begin the iterations within each dataset.
     for(i_loop in seq_along(1:maxit)){
 
-      if(!quiet){print(paste("Imputing iteration:", i_loop))}
+      if(!quiet){message(paste("Imputing iteration:", i_loop))}
 
       # Begin the iteration column by column
       for(column in column_order){
@@ -111,7 +111,7 @@ misl <- function(dataset,
         # Technically I should be able to just include the delayed code and the plan should default to sequential?
         test <- sl3::delayed_learner_train(sl, task)
 
-        sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet)
+        sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE)
         stack_fit <- sched$compute()
 
         ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE IF/ELSE CONDITIONAL?
@@ -150,7 +150,12 @@ misl <- function(dataset,
         }else if(outcome_type == "continuous"){
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
         }else if(outcome_type== "categorical"){
-          predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
+          # This is a built in protector because the current MISL package does not update predictions properly for mean
+          if(cat_method == "Lrnr_mean"){
+            predicted_values <- as.character(impute_mode(dataset[[column]]))
+          }else{
+            predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
+          }
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
 
