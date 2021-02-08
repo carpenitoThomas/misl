@@ -109,21 +109,12 @@ misl <- function(dataset,
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
         # Technically I should be able to just include the delayed code and the plan should default to sequential?
-        #if(multisession){
-        #  test <- sl3::delayed_learner_train(sl, task)
-
-        #  sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet, nworkers = nworkers)
-        #  stack_fit <- sched$compute()
-        #}else{
-        #  stack_fit <- sl$train(task)
-        #}
-
         test <- sl3::delayed_learner_train(sl, task)
 
         sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = !quiet)
         stack_fit <- sched$compute()
 
-        ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE ELSE CONDITIONAL?
+        ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE IF/ELSE CONDITIONAL?
         # And finally obtain predictions from the stack on the updated dataset
         if(i_loop == 1){
           dataset_copy <- dataset_master_copy
@@ -134,7 +125,6 @@ misl <- function(dataset,
             if(column_type == "categorical"){
               dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
             }else{
-              # We assume now that we have some continuous variable... BUT this variable could be binary or continuous
               # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
               # This function is incomplete in its checks...
               if(column_type == "binary"){
@@ -159,10 +149,9 @@ misl <- function(dataset,
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
-        }else{
-          # In this instance, the column type is categorical
-          # This is depedent on what the super learner returns (predictions or predicted probabilities)
-          dataset_master_copy[[column]] <-  as.factor(ifelse(is.na(dataset[[column]]), as.character(sl3::predict_classes(sl3::unpack_predictions(predictions))), as.character(dataset[[column]])))
+        }else if(outcome_type== "categorical"){
+          predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
+          dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
 
       }
