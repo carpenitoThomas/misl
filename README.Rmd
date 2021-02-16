@@ -43,7 +43,7 @@ Here's an example with the nhanes data in which we use `misl()` imputation and t
 ```{r}
 library(misl)
 
-misl_imp <- misl(nhanes, maxit = 5, m = 5, quiet = FALSE,con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
+misl_imp2 <- misl(nhanes, maxit = 5, m = 5, quiet = FALSE,con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                              bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                              cat_method = c("Lrnr_mean"))
 

@@ -35,17 +35,21 @@ misl <- function(dataset,
   imputed_datasets <- vector("list", m)
 
   # This apply function defines each of the imputed m datasets
-  imputed_datasets <- future.apply::future_lapply(seq_along(1:m), function(m_loop){
+  imputed_datasets <- future.apply::future_lapply(future.stdout = NA, seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
-    if(!quiet){message(paste("Imputing dataset:", m_loop))}
+    if(!quiet){print(paste("Imputing dataset:", m_loop))}
 
     # Initializes the trace plot (for inspection of imputations)
     trace_plot <- expand.grid(statistic = c("mean", "sd"), value = NA, variable = colnames(dataset), m = m_loop, iteration = seq_along(1:maxit))
 
     # Identify which order the columns should be imputed.
     # The order here specifies least missing data to most though the order should not be important (per MICE).
+
+    missing_columns <- colnames(dataset)[colSums(is.na(dataset))!=0]
     column_order <- colnames(dataset)[order(colSums(is.na(dataset)))]
+    column_order <- column_order[column_order %in% missing_columns]
+
 
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
@@ -53,16 +57,20 @@ misl <- function(dataset,
     # Next, we begin the iterations within each dataset.
     for(i_loop in seq_along(1:maxit)){
 
-      if(!quiet){message(paste("Imputing iteration:", i_loop))}
+      if(!quiet){print(paste("Imputing iteration:", i_loop))}
 
       # Begin the iteration column by column
       for(column in column_order){
 
         if(!quiet){print(paste("Imputing:", column))}
 
+        # A change to the new algorithm - hoping to increase the width of confidence intervals by altering the intial values used for model fitting
+        full_dataframe <- dataset_master_copy
+
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
-        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+
+        # full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(full_dataframe[ , -which(names(full_dataframe) %in% c(column)), drop = FALSE])

@@ -13,13 +13,13 @@ traceplot <- function(imputations){
   }
 
   long_dataframe %>%
-    mutate(m = as.factor(m)) %>%
+    dplyr::mutate(m = as.factor(m)) %>%
     dplyr::filter(!is.na(value)) %>%
-    ggplot2::ggplot(aes(x = iteration, y = value, group = m, color= m)) +
-    geom_line() +
-    geom_point() +
-    facet_wrap(variable ~ statistic , scales = "free", ncol = 2) +
-    theme_bw()
+    ggplot2::ggplot(ggplot2::aes(x = iteration, y = value, group = m, color= m)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point() +
+    ggplot2::facet_wrap(variable ~ statistic , scales = "free", ncol = 2) +
+    ggplot2::theme_bw()
 }
 
 
