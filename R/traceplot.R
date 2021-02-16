@@ -14,8 +14,8 @@ traceplot <- function(imputations){
 
   long_dataframe %>%
     mutate(m = as.factor(m)) %>%
-    filter(!is.na(value)) %>%
-    ggplot(aes(x = iteration, y = value, group = m, color= m)) +
+    dplyr::filter(!is.na(value)) %>%
+    ggplot2::ggplot(aes(x = iteration, y = value, group = m, color= m)) +
     geom_line() +
     geom_point() +
     facet_wrap(variable ~ statistic , scales = "free", ncol = 2) +
