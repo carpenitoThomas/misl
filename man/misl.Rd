@@ -11,9 +11,9 @@ misl(
   seed = NA,
   con_method = c("Lrnr_mean", "Lrnr_glm"),
   bin_method = c("Lrnr_mean", "Lrnr_glm"),
-  cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+  cat_method = c("Lrnr_mean"),
   missing_default = "mean",
-  quiet = FALSE
+  quiet = TRUE
 )
 }
 \arguments{
