@@ -43,13 +43,21 @@ Here's an example with the nhanes data in which we use `misl()` imputation and t
 ```{r}
 library(misl)
 
-misl_imp <- misl(nhanes, maxit = 2, m = 2, quiet = FALSE)
+misl_imp <- misl(nhanes, maxit = 5, m = 5, quiet = FALSE,con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
+                             bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
+                             cat_method = c("Lrnr_mean"))
 
 misl_modeling <- lapply(misl_imp, function(y){
-  stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y)
+  stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y$datasets)
 })
 
-summary(mice::pool(misl_modeling))
+summary(mice::pool(misl_modeling), conf.int = TRUE)
+```
+
+We can also look at the traceplot of the imputations as well:
+
+```{r}
+traceplot(misl_imp)
 ```
 
 This package also supports paralellization with the `future` package. One can choose to paralellize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):

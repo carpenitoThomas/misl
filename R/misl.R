@@ -41,7 +41,7 @@ misl <- function(dataset,
     if(!quiet){message(paste("Imputing dataset:", m_loop))}
 
     # Initializes the trace plot (for inspection of imputations)
-    trace_plot <- expand.grid(mean_value = NA, sd_value = NA, variable = colnames(dataset), m = m_loop, iteration = seq_along(1:maxit))
+    trace_plot <- expand.grid(statistic = c("mean", "sd"), value = NA, variable = colnames(dataset), m = m_loop, iteration = seq_along(1:maxit))
 
     # Identify which order the columns should be imputed.
     # The order here specifies least missing data to most though the order should not be important (per MICE).
@@ -125,16 +125,21 @@ misl <- function(dataset,
             # This is a check to see if the column is a factor, requiring mode imputation
             # This means that the column should be registered as a factor.
             column_type <- check_datatype(dataset[[column_number]])
-            if(column_type == "categorical"){
-              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
+            # Here, we are trying something new; rather than imputing the mean/mode we are just going to do a random sample from the existing data.
+            if(TRUE){
+              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <- sample(dataset_copy[[column_number]][!is.na(dataset_copy[[column_number]])], 1)
             }else{
-              # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
-              # This function is incomplete in its checks...
-              if(column_type == "binary"){
+              if(column_type == "categorical"){
                 dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
               }else{
-                # Here, we assume a continuous variable and can use simple mean or median imputation
-                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
+                # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
+                # This function is incomplete in its checks...
+                if(column_type == "binary"){
+                  dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
+                }else{
+                  # Here, we assume a continuous variable and can use simple mean or median imputation
+                  dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
+                }
               }
             }
           }
@@ -163,8 +168,8 @@ misl <- function(dataset,
         }
         # Append to the trace plot only if a numeric column
         if(outcome_type != "categorical" & sum(is.na(dataset[[column]])) > 0){
-          trace_plot$mean_value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop] <- mean(dataset_master_copy[[column]][is.na(dataset[[column]])])
-          trace_plot$sd_value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop] <- sd(dataset_master_copy[[column]][is.na(dataset[[column]])])
+          trace_plot$value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop & trace_plot$statistic == "mean"] <- mean(dataset_master_copy[[column]][is.na(dataset[[column]])])
+          trace_plot$value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop & trace_plot$statistic == "sd"] <- sd(dataset_master_copy[[column]][is.na(dataset[[column]])])
         }
 
       }
