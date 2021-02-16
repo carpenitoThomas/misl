@@ -23,7 +23,7 @@ misl <- function(dataset,
                  seed = NA,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
-                 cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                 cat_method = c("Lrnr_mean"),
                  missing_default = "mean",
                  quiet = TRUE
                  ){
@@ -39,6 +39,9 @@ misl <- function(dataset,
 
     # Do users want to know which dataset they are imputing?
     if(!quiet){message(paste("Imputing dataset:", m_loop))}
+
+    # Initializes the trace plot (for inspection of imputations)
+    trace_plot <- expand.grid(mean_value = NA, sd_value = NA, variable = colnames(dataset), m = m_loop, iteration = seq_along(1:maxit))
 
     # Identify which order the columns should be imputed.
     # The order here specifies least missing data to most though the order should not be important (per MICE).
@@ -158,12 +161,18 @@ misl <- function(dataset,
           }
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
+        # Append to the trace plot only if a numeric column
+        if(outcome_type != "categorical" & sum(is.na(dataset[[column]])) > 0){
+          trace_plot$mean_value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop] <- mean(dataset_master_copy[[column]][is.na(dataset[[column]])])
+          trace_plot$sd_value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop] <- sd(dataset_master_copy[[column]][is.na(dataset[[column]])])
+        }
 
       }
     }
 
-    # After all columns are imputed, we can save the dataset for recall later
-    dataset_master_copy
+    # After all columns are imputed, we can save the dataset and trace plot for recall later
+    return_object <- list(datasets = dataset_master_copy, trace = trace_plot)
+    return_object
   })
   return(imputed_datasets)
 }
