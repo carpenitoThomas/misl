@@ -43,9 +43,11 @@ Here's an example with the nhanes data in which we use `misl()` imputation and t
 ```{r}
 library(misl)
 
-misl_imp2 <- misl(nhanes, maxit = 5, m = 5, quiet = FALSE,con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
-                             bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
-                             cat_method = c("Lrnr_mean"))
+plan(list(tweak(multisession, workers = 4), sequential))
+misl_imp <- misl(nhanes, maxit = 5, m = 4, quiet = FALSE,
+                  con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth", "Lrnr_glmnet", "Lrnr_polspline"),
+                  bin_method = c("Lrnr_mean", "Lrnr_earth", "Lrnr_glm_fast"),
+                  cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y$datasets)
