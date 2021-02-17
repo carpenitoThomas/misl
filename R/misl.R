@@ -65,12 +65,12 @@ misl <- function(dataset,
         if(!quiet){print(paste("Imputing:", column))}
 
         # A change to the new algorithm - hoping to increase the width of confidence intervals by altering the intial values used for model fitting
-        #full_dataframe <- dataset_master_copy
+        full_dataframe <- dataset_master_copy
 
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
 
-        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+        #full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(full_dataframe[ , -which(names(full_dataframe) %in% c(column)), drop = FALSE])
