@@ -50,7 +50,6 @@ misl <- function(dataset,
     column_order <- colnames(dataset)[order(colSums(is.na(dataset)))]
     column_order <- column_order[column_order %in% missing_columns]
 
-
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
 
@@ -63,17 +62,15 @@ misl <- function(dataset,
       for(column in column_order){
 
         if(!quiet){print(paste("Imputing:", column))}
-
-        # A change to the new algorithm - hoping to increase the width of confidence intervals by altering the intial values used for model fitting
-        full_dataframe <- dataset_master_copy
-
         # First, we extract all complete records with respect to the column we are imputing
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
+        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
 
-        #full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+        # To incorporate uncertainty in the imputations we will be using bootstrap sampling
+        bootstrap_sample <- sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
-        xvars <- colnames(full_dataframe[ , -which(names(full_dataframe) %in% c(column)), drop = FALSE])
+        xvars <- colnames(bootstrap_sample[ , -which(names(bootstrap_sample) %in% c(column)), drop = FALSE])
         yvar <- column
 
         # We need to keep track of which values from the original dataframe are missing
@@ -82,20 +79,25 @@ misl <- function(dataset,
         #missing_yvar <- is.na(dataset[[column]])
 
         # For the first iteration, any missing values will need to be set to either the mean or mode of the column.
+        # This will allow us to train the super learner on the bootstrap sample.
         # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well upon successive iterations.
         # Note, we include the "yvar" in this iteration though nothing should be imputed for this column (since we subsetted with respect to it being full)
         # It would be easy to define this column type as a variable.
-        for(column_number in seq_along(full_dataframe)){
-          full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
+        # Also note, the SL3 algorithm with impute missing values with either the median or mode (depending on type) so that's something to consider.
+        #for(column_number in seq_along(full_dataframe)){
+        #  full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
+        #}
+        for(column_number in seq_along(bootstrap_sample)){
+          bootstrap_sample[is.na(bootstrap_sample[[column_number]]), column_number] <-  impute_placeholders(bootstrap_sample, column_number, missing_default)
         }
 
-        # We should now have a complete dataframe and can begin misl.
+        # We can begin misl.
 
         # Specifying the outcome_type will be helpful for checking learners.
         outcome_type <- check_datatype(dataset[[yvar]])
 
         # First, define the task
-        task <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar)
+        task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
 
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
@@ -127,27 +129,23 @@ misl <- function(dataset,
 
         ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE IF/ELSE CONDITIONAL?
         # And finally obtain predictions from the stack on the updated dataset
+        # Note, this step is important becuase we want to make predictions on those rows that have the missing outcome... but we might also have missing covariate data, too!
         if(i_loop == 1){
           dataset_copy <- dataset_master_copy
           for(column_number in seq_along(dataset_copy)){
             # This is a check to see if the column is a factor, requiring mode imputation
             # This means that the column should be registered as a factor.
             column_type <- check_datatype(dataset[[column_number]])
-            # Here, we are trying something new; rather than imputing the mean/mode we are just going to do a random sample from the existing data.
-            if(FALSE){
-              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <- sample(dataset_copy[[column_number]][!is.na(dataset_copy[[column_number]])], 1)
+            if(column_type == "categorical"){
+              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
             }else{
-              if(column_type == "categorical"){
+              # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
+              # This function is incomplete in its checks...
+              if(column_type == "binary"){
                 dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
               }else{
-                # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
-                # This function is incomplete in its checks...
-                if(column_type == "binary"){
-                  dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
-                }else{
-                  # Here, we assume a continuous variable and can use simple mean or median imputation
-                  dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
-                }
+                # Here, we assume a continuous variable and can use simple mean or median imputation
+                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
               }
             }
           }
@@ -159,7 +157,9 @@ misl <- function(dataset,
         predictions <- stack_fit$predict(new_prediction_task)
 
         # Once we have the predictions we can replace the missing values from the original dataframe
-        # Note, we add a bit of random noise here
+        # Originally, was thinking this would be a good place to add a bit of noise. The old implementation was stochastic and is complicated (based on how much variance do we add... etc?)
+        # There may not be justification for the continuous outcome scenario - why are we adding random noise to the imputations?
+        # If confidence intervals are too small, we can use a matching technique that is at least theoretically backed.
         if(outcome_type == "binary"){
           predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
@@ -167,7 +167,7 @@ misl <- function(dataset,
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
         }else if(outcome_type== "categorical"){
           # This is a built in protector because the current MISL package does not update predictions properly for mean
-          if(cat_method == "Lrnr_mean"){
+          if(cat_method == "Lrnr_mean" & length(cat_method == 1)){
             predicted_values <- as.character(impute_mode(dataset[[column]]))
           }else{
             predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
