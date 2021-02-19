@@ -43,12 +43,9 @@ misl <- function(dataset,
     # Initializes the trace plot (for inspection of imputations)
     trace_plot <- expand.grid(statistic = c("mean", "sd"), value = NA, variable = colnames(dataset), m = m_loop, iteration = seq_along(1:maxit))
 
-    # Identify which order the columns should be imputed.
-    # The order here specifies least missing data to most though the order should not be important (per MICE).
-
-    missing_columns <- colnames(dataset)[colSums(is.na(dataset))!=0]
-    column_order <- colnames(dataset)[order(colSums(is.na(dataset)))]
-    column_order <- column_order[column_order %in% missing_columns]
+    # Identifies which columns need to be imputed. According to van Buren, this order does not matter.
+    # https://stefvanbuuren.name/fimd/sec-algoptions.html
+    column_order <- colnames(dataset)[colSums(is.na(dataset))!=0]
 
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
@@ -62,46 +59,34 @@ misl <- function(dataset,
       for(column in column_order){
 
         if(!quiet){print(paste("Imputing:", column))}
-        # First, we extract all complete records with respect to the column we are imputing
-        # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
-        full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
+        # First, we extract all complete records with respect to the column we are imputing.
+        # This is our y_dot_obs and x_dot_obs
+        # https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
+        full_dataframe <- dataset_master_copy[!is.na(dataset[[column]]), ]
 
         # Here, we need to fill in the remaining empty cells and we do this with random sampling.
+        # This is step 2 of https://stefvanbuuren.name/fimd/sec-FCS.html#def:mice
         for(column_number in seq_along(full_dataframe)){
           full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
         }
 
-        # To incorporate uncertainty in the imputations we will be using bootstrap sampling
+        # To avoid complications with variance estimates of the ensemble, we will use bootstrapping
+        # See note below algorithm: https://stefvanbuuren.name/fimd/sec-pmm.html#def:pmm
+        # We can also see the following: https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
         bootstrap_sample <- sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(bootstrap_sample[ , -which(names(bootstrap_sample) %in% c(column)), drop = FALSE])
         yvar <- column
 
-        # We need to keep track of which values from the original dataframe are missing
-        # This is important becuase after the first iteration NONE of the values will be classified as missing
-        # Since MISL will have imputed them. When we iterate we only want to change these values per column.
-        #missing_yvar <- is.na(dataset[[column]])
-
-        # For the first iteration, any missing values will need to be set to either the mean or mode of the column.
-        # This will allow us to train the super learner on the bootstrap sample.
-        # This will also serve as a "catch" if the algorithm chooses not to impute values for this column as well upon successive iterations.
-        # Note, we include the "yvar" in this iteration though nothing should be imputed for this column (since we subsetted with respect to it being full)
-        # It would be easy to define this column type as a variable.
-        # Also note, the SL3 algorithm with impute missing values with either the median or mode (depending on type) so that's something to consider.
-        #for(column_number in seq_along(full_dataframe)){
-        #  full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
-        #}
-
-
-        # We can begin misl.
+        # We can begin defining our impuation model or, super learning
+        # Information on other models can be found: https://stefvanbuuren.name/fimd/how-to-generate-multiple-imputations.html
 
         # Specifying the outcome_type will be helpful for checking learners.
         outcome_type <- check_datatype(dataset[[yvar]])
 
-        # First, define the task
-        beta_hat_task <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar)
-        beta_dot_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
+        # First, define the task using our bootstrap_sample (this helps with variability in imputations)
+        sl3_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
 
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
@@ -112,11 +97,7 @@ misl <- function(dataset,
         # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
         for(learner in learners){
-          if(learner == "SL.bayesglm"){
-            code.lm <- paste(learner, ' <- sl3::Lrnr_pkg_SuperLearner$new("SL.bayesglm")', sep="")
-          }else{
-            code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
-          }
+          code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
           eval(parse(text=code.lm))
           learner_list <- c(learner, learner_list)
         }
@@ -126,79 +107,52 @@ misl <- function(dataset,
         eval(parse(text=learner_stack_code))
 
         # Then we make and train the Super Learner
-        # This was a bottleneck for past simulations and we are introducing multisession parellelization
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
-        # Technically I should be able to just include the delayed code and the plan should default to sequential?
-        beta_hat_test <- sl3::delayed_learner_train(sl, beta_hat_task)
-        beta_dot_test <- sl3::delayed_learner_train(sl, beta_dot_task)
+        # We can then go ahead and train our model
+        sl_train <- sl3::delayed_learner_train(sl, sl3_task)
+        # This bit of code can be used if people wanted multi-threading (depending on computer capacity)
+        sl_sched <- delayed::Scheduler$new(sl_train, delayed::FutureJob, verbose = FALSE)
+        sl_stack_fit <- sl_sched$compute()
 
-        beta_hat_sched <- delayed::Scheduler$new(beta_hat_test, delayed::FutureJob, verbose = FALSE)
-        beta_dot_sched <- delayed::Scheduler$new(beta_dot_test, delayed::FutureJob, verbose = FALSE)
-
-        beta_hat_stack_fit <- beta_hat_sched$compute()
-        beta_dot_stack_fit <- beta_dot_sched$compute()
-
-        ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE IF/ELSE CONDITIONAL?
-        # And finally obtain predictions from the stack on the updated dataset
-        # Note, this step is important becuase we want to make predictions on those rows that have the missing outcome... but we might also have missing covariate data, too!
-        if(i_loop == 1){
-          dataset_copy <- dataset_master_copy
-          for(column_number in seq_along(dataset_copy)){
-            # This is a check to see if the column is a factor, requiring mode imputation
-            # This means that the column should be registered as a factor.
-            column_type <- check_datatype(dataset[[column_number]])
-            if(column_type == "categorical"){
-              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_placeholders(dataset, column_number, missing_default)
-            }else{
-              # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
-              # This function is incomplete in its checks...
-              if(column_type == "binary"){
-                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_placeholders(dataset, column_number, missing_default)
-              }else{
-                # Here, we assume a continuous variable and can use simple mean or median imputation
-                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_placeholders(dataset, column_number, missing_default)
-              }
-            }
-          }
-        }else{
-          dataset_copy <- full_dataframe
+        # We are now at the point where we can obtain predictions for matching candidates using X_miss
+        # We are only interested in those values for which our [[column]] is missing, but we can make predictions on the entire dataset, that's OK!
+        dataset_copy <- dataset_master_copy
+        for(column_number in seq_along(dataset_copy)){
+          # If this is the first iteration then we're going to have missing values for some of our rows.
+          dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <- impute_placeholders(dataset, column_number, missing_default)
         }
 
+        # Here we can create the predictions and then we can match them with the hot-deck method
+        # Interestingly, there are 4 different ways we can match: https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
+        # But, we're going to follow the bootstrap matching method: https://stefvanbuuren.name/fimd/sec-cart.html#sec:cartoverview
+        # Which is interesting becuase it looks like our beta hat and beta dot are one in the same: https://stefvanbuuren.name/fimd/sec-categorical.html
+        predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
+        predictions <- sl_stack_fit$predict(predictions_task)
 
-        # This is where we need to create the beta hat predictions (of the observed data) and the beta dot predictions (of the missing data)
-        beta_hat_predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
-        beta_hat_predictions <- beta_hat_stack_fit$predict(beta_hat_predictions_task)
-
-        beta_dot_predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
-        beta_dot_predictions <- beta_dot_stack_fit$predict(beta_dot_predictions_task)
-
-        # Here we can begin matching the beta hat predictions (of the observed data) and the beta dot predictions (of the missing data)
-
-        # Once we have the predictions we can replace the missing values from the original dataframe
-        # Originally, was thinking this would be a good place to add a bit of noise. The old implementation was stochastic and is complicated (based on how much variance do we add... etc?)
-        # There may not be justification for the continuous outcome scenario - why are we adding random noise to the imputations?
-        # If confidence intervals are too small, we can use a matching technique that is at least theoretically backed.
+        # Here we can begin selection from a canidate donor
+        # Note, this is unclear... becuase we are using a technique like CART but we don't have terminal nodes.
+        # But also PMM didn't distinguish how one matches when using bootstrap?
+        # So, we're not going to be matching with binary or categorical variables, we can just use sampling from their distribution.
+        # https://stefvanbuuren.name/fimd/sec-categorical.html
         if(outcome_type == "binary"){
-          # We cannot do matching with binary so we make draws using the beta_dot predictions
-          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, beta_dot_predictions)
+          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
           # If continuous, we can do matching
           # Find the 5 closest donors and making a random draw from them
           list_of_matches <- c()
-          for(value in seq_along(beta_dot_predictions)){
-            matches <- Hmisc::find.matches(x = beta_dot_predictions[value], y = ifelse(is.na(dataset[[column]]), NA, beta_hat_predictions), maxmatch = 5, tol = 10000)
+          for(value in seq_along(predictions)){
+            matches <- Hmisc::find.matches(x = predictions[value], y = ifelse(is.na(dataset[[column]]), NA, dataset[[column]]), maxmatch = 5, tol = 10000)
             list_of_matches[value] <- dataset[[column]][sample(matches$matches)[1]]
           }
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
         }else if(outcome_type== "categorical"){
-          # We cannot do matching with binary so we make draws using the beta_dot predictions
           # This is a built in protector because the current MISL package does not update predictions properly for mean
           if(cat_method == "Lrnr_mean" & length(cat_method == 1)){
-            predicted_values <- as.character(impute_mode(dataset[[column]]))
+            predicted_values <- as.character(sample(dataset[[column]], 1))
           }else{
-            predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(beta_dot_predictions),1)
+            predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
           }
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
@@ -210,7 +164,6 @@ misl <- function(dataset,
 
       }
     }
-
     # After all columns are imputed, we can save the dataset and trace plot for recall later
     return_object <- list(datasets = dataset_master_copy, trace = trace_plot)
     return_object
