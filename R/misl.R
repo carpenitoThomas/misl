@@ -97,7 +97,8 @@ misl <- function(dataset,
         outcome_type <- check_datatype(dataset[[yvar]])
 
         # First, define the task
-        task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
+        beta_hat_task <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar)
+        beta_dot_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
 
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
@@ -122,10 +123,14 @@ misl <- function(dataset,
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
         # Technically I should be able to just include the delayed code and the plan should default to sequential?
-        test <- sl3::delayed_learner_train(sl, task)
+        beta_hat_test <- sl3::delayed_learner_train(sl, beta_hat_task)
+        beta_dot_test <- sl3::delayed_learner_train(sl, beta_dot_task)
 
-        sched <- delayed::Scheduler$new(test, delayed::FutureJob, verbose = FALSE)
-        stack_fit <- sched$compute()
+        beta_hat_sched <- delayed::Scheduler$new(beta_hat_test, delayed::FutureJob, verbose = FALSE)
+        beta_dot_sched <- delayed::Scheduler$new(beta_dot_test, delayed::FutureJob, verbose = FALSE)
+
+        beta_hat_stack_fit <- beta_hat_sched$compute()
+        beta_dot_stack_fit <- beta_dot_sched$compute()
 
         ####### CAN I KEEP JUST THE FOLLOWING CODE AND REMOVE THE IF/ELSE CONDITIONAL?
         # And finally obtain predictions from the stack on the updated dataset
@@ -153,8 +158,18 @@ misl <- function(dataset,
           dataset_copy <- full_dataframe
         }
 
-        new_prediction_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
-        predictions <- stack_fit$predict(new_prediction_task)
+
+        # This is where we need to create the beta hat predictions (of the observed data) and the beta dot predictions (of the missing data)
+        beta_hat_predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
+        beta_dot_predictions <- beta_hat_stack_fit$predict(beta_hat_predictions_task)
+
+        beta_dot_predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
+        beta_dot_predictions <- beta_dot_stack_fit$predict(beta_dot_predictions_task)
+
+        ####### THIS FUNCTION NEEDS TO BE CHECKED #######
+        # Here we can begin matching the beta hat predictions (of the observed data) and the beta dot predictions (of the missing data)
+
+
 
         # Once we have the predictions we can replace the missing values from the original dataframe
         # Originally, was thinking this would be a good place to add a bit of noise. The old implementation was stochastic and is complicated (based on how much variance do we add... etc?)
