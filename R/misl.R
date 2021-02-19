@@ -24,7 +24,7 @@ misl <- function(dataset,
                  con_method = c("Lrnr_mean", "Lrnr_glm"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm"),
                  cat_method = c("Lrnr_mean"),
-                 missing_default = "mean",
+                 missing_default = "sample",
                  quiet = TRUE
                  ){
 
@@ -66,6 +66,11 @@ misl <- function(dataset,
         # Note, with the second iteration we should be using *all* rows of our dataframe (since the missing values were imputed on the first iteration)
         full_dataframe <- dataset_master_copy[!is.na(dataset_master_copy[[column]]), ]
 
+        # Here, we need to fill in the remaining empty cells and we do this with random sampling.
+        for(column_number in seq_along(full_dataframe)){
+          full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
+        }
+
         # To incorporate uncertainty in the imputations we will be using bootstrap sampling
         bootstrap_sample <- sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
@@ -87,9 +92,7 @@ misl <- function(dataset,
         #for(column_number in seq_along(full_dataframe)){
         #  full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
         #}
-        for(column_number in seq_along(bootstrap_sample)){
-          bootstrap_sample[is.na(bootstrap_sample[[column_number]]), column_number] <-  impute_placeholders(bootstrap_sample, column_number, missing_default)
-        }
+
 
         # We can begin misl.
 
@@ -109,7 +112,11 @@ misl <- function(dataset,
         # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
         for(learner in learners){
-          code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
+          if(learner == "SL.bayesglm"){
+            code.lm <- paste(learner, ' <- sl3::Lrnr_pkg_SuperLearner$new("SL.bayesglm")', sep="")
+          }else{
+            code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
+          }
           eval(parse(text=code.lm))
           learner_list <- c(learner, learner_list)
         }
@@ -142,15 +149,15 @@ misl <- function(dataset,
             # This means that the column should be registered as a factor.
             column_type <- check_datatype(dataset[[column_number]])
             if(column_type == "categorical"){
-              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
+              dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_placeholders(dataset, column_number, missing_default)
             }else{
               # Major assumption, if the column is binary then it must ONLY have the values 0,1 (not 1,2 - for example)
               # This function is incomplete in its checks...
               if(column_type == "binary"){
-                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_mode(dataset_copy[[column_number]])
+                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_placeholders(dataset, column_number, missing_default)
               }else{
                 # Here, we assume a continuous variable and can use simple mean or median imputation
-                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  get(missing_default)(dataset_copy[[column_number]], na.rm = TRUE)
+                dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <-  impute_placeholders(dataset, column_number, missing_default)
               }
             }
           }
@@ -161,31 +168,37 @@ misl <- function(dataset,
 
         # This is where we need to create the beta hat predictions (of the observed data) and the beta dot predictions (of the missing data)
         beta_hat_predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
-        beta_dot_predictions <- beta_hat_stack_fit$predict(beta_hat_predictions_task)
+        beta_hat_predictions <- beta_hat_stack_fit$predict(beta_hat_predictions_task)
 
         beta_dot_predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
         beta_dot_predictions <- beta_dot_stack_fit$predict(beta_dot_predictions_task)
 
-        ####### THIS FUNCTION NEEDS TO BE CHECKED #######
         # Here we can begin matching the beta hat predictions (of the observed data) and the beta dot predictions (of the missing data)
-
-
 
         # Once we have the predictions we can replace the missing values from the original dataframe
         # Originally, was thinking this would be a good place to add a bit of noise. The old implementation was stochastic and is complicated (based on how much variance do we add... etc?)
         # There may not be justification for the continuous outcome scenario - why are we adding random noise to the imputations?
         # If confidence intervals are too small, we can use a matching technique that is at least theoretically backed.
         if(outcome_type == "binary"){
-          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
+          # We cannot do matching with binary so we make draws using the beta_dot predictions
+          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, beta_dot_predictions)
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
-          dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), predictions + stats::rnorm(n = length(predictions), mean = 0, sd = stats::sd(predictions) ), dataset[[column]])
+          # If continuous, we can do matching
+          # Find the 5 closest donors and making a random draw from them
+          list_of_matches <- c()
+          for(value in seq_along(beta_dot_predictions)){
+            matches <- Hmisc::find.matches(x = beta_dot_predictions[value], y = ifelse(is.na(dataset[[column]]), NA, beta_hat_predictions), maxmatch = 5, tol = 10000)
+            list_of_matches[value] <- dataset[[column]][sample(matches$matches)[1]]
+          }
+          dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
         }else if(outcome_type== "categorical"){
+          # We cannot do matching with binary so we make draws using the beta_dot predictions
           # This is a built in protector because the current MISL package does not update predictions properly for mean
           if(cat_method == "Lrnr_mean" & length(cat_method == 1)){
             predicted_values <- as.character(impute_mode(dataset[[column]]))
           }else{
-            predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
+            predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(beta_dot_predictions),1)
           }
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
