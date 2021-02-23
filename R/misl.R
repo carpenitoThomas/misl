@@ -21,8 +21,8 @@ misl <- function(dataset,
                  m = 5,
                  maxit = 5,
                  seed = NA,
-                 con_method = c("Lrnr_mean", "Lrnr_glm"),
-                 bin_method = c("Lrnr_mean", "Lrnr_glm"),
+                 con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
+                 bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                  cat_method = c("Lrnr_mean"),
                  missing_default = "sample",
                  quiet = TRUE
@@ -73,7 +73,7 @@ misl <- function(dataset,
         # To avoid complications with variance estimates of the ensemble, we will use bootstrapping
         # See note below algorithm: https://stefvanbuuren.name/fimd/sec-pmm.html#def:pmm
         # We can also see the following: https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
-        bootstrap_sample <- sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
+        bootstrap_sample <- dplyr::sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(bootstrap_sample[ , -which(names(bootstrap_sample) %in% c(column)), drop = FALSE])
@@ -97,7 +97,12 @@ misl <- function(dataset,
         # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
         for(learner in learners){
-          code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
+          # We need to add a bit of code until a PR is accepted for the SL3 package for using bayesGLM (2/23/21)
+          if(learner == "SL.bayesglm"){
+            code.lm <- paste(learner, " <- sl3::Lrnr_pkg_SuperLearner$new(\"SL.ranger\")")
+          }else{
+            code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
+          }
           eval(parse(text=code.lm))
           learner_list <- c(learner, learner_list)
         }
@@ -116,7 +121,7 @@ misl <- function(dataset,
         sl_stack_fit <- sl_sched$compute()
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
-        # We are only interested in those values for which our [[column]] is missing, but we can make predictions on the entire dataset, that's OK!
+        # We are only interested in those values for which our dataset[[column]] is missing, but we can make predictions on the entire dataset, that's OK!
         dataset_copy <- dataset_master_copy
         for(column_number in seq_along(dataset_copy)){
           # If this is the first iteration then we're going to have missing values for some of our rows.
@@ -143,8 +148,8 @@ misl <- function(dataset,
           # Find the 5 closest donors and making a random draw from them
           list_of_matches <- c()
           for(value in seq_along(predictions)){
-            matches <- Hmisc::find.matches(x = predictions[value], y = ifelse(is.na(dataset[[column]]), NA, dataset[[column]]), maxmatch = 5, tol = 10000)
-            list_of_matches[value] <- dataset[[column]][sample(matches$matches)[1]]
+            distance <- head(order(abs(predictions[value] - ifelse(is.na(dataset[[column]]), NA, predictions))),5)
+            list_of_matches[value] <- ifelse(is.na(dataset[[column]]), NA, dataset[[column]])[sample(distance,1)]
           }
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
         }else if(outcome_type== "categorical"){

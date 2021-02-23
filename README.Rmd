@@ -51,8 +51,6 @@ misl_imp <- misl(misl::abalone, maxit = 5, m = 5, quiet = FALSE,
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(Whole_Weight ~ Sex + Length + Diameter + Height + Older_12, data = y$datasets)
 })
-
-summary(mice::pool(misl_modeling), conf.int = TRUE)
 ```
 
 We can also look at the traceplot of the imputations as well:
