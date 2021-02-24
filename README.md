@@ -38,263 +38,83 @@ imputation and then pool the results:
 ``` r
 library(misl)
 
-misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = FALSE,
+misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = TRUE,
                   con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth", "Lrnr_glmnet", "Lrnr_polspline"),
                   bin_method = c("Lrnr_mean", "Lrnr_earth", "Lrnr_glm_fast"),
                   cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
-#> [1] "Imputing dataset: 1"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 3"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 4"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 5"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing dataset: 2"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 3"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 4"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 5"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing dataset: 3"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 3"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 4"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 5"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing dataset: 4"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 3"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 4"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 5"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing dataset: 5"
-#> [1] "Imputing iteration: 1"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 2"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 3"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 4"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> [1] "Imputing iteration: 5"
-#> [1] "Imputing: Sex"
-#> [1] "Imputing: Length"
-#> [1] "Imputing: Diameter"
-#> [1] "Imputing: Height"
-#> [1] "Imputing: Whole_Weight"
-#> [1] "Imputing: Older_12"
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
-#> Warning in if (cat_method == "Lrnr_mean" & length(cat_method == 1)) {: the
+#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
 #> condition has length > 1 and only the first element will be used
 
 misl_modeling <- lapply(misl_imp, function(y){
@@ -302,22 +122,22 @@ misl_modeling <- lapply(misl_imp, function(y){
 })
 
 summary(mice::pool(misl_modeling), conf.int = TRUE)
-#>          term    estimate   std.error  statistic         df      p.value
-#> 1 (Intercept) -1.02928344 0.017108950 -60.160526  594.33585 0.000000e+00
-#> 2        SexI -0.02642959 0.008727736  -3.028230  190.52111 2.800730e-03
-#> 3        SexM  0.01429277 0.007167249   1.994178  148.20919 4.796700e-02
-#> 4      Length  1.81666106 0.141152897  12.870165 1649.38050 0.000000e+00
-#> 5    Diameter  1.51370552 0.251721676   6.013410   13.92595 3.252826e-05
-#> 6      Height  1.97544577 0.525044539   3.762435    4.33570 1.704645e-02
-#> 7    Older_12  0.04717812 0.007059917   6.682532  115.35420 8.734742e-10
-#>           2.5 %      97.5 %
-#> 1 -1.0628847889 -0.99568208
-#> 2 -0.0436449957 -0.00921419
-#> 3  0.0001295726  0.02845597
-#> 4  1.5398033019  2.09351882
-#> 5  0.9735467558  2.05386428
-#> 6  0.5611411060  3.38975044
-#> 7  0.0331942380  0.06116200
+#>          term    estimate   std.error  statistic          df      p.value
+#> 1 (Intercept) -1.03257632 0.016700130 -61.830436 2249.171260 0.000000e+00
+#> 2        SexI -0.02797162 0.008661970  -3.229244  231.724751 1.421043e-03
+#> 3        SexM  0.01739208 0.006720929   2.587749 1534.027044 9.751724e-03
+#> 4      Length  1.93903177 0.189889013  10.211395   18.684182 4.446959e-09
+#> 5    Diameter  1.44656728 0.197547685   7.322623   72.204451 2.759397e-10
+#> 6      Height  1.73062838 0.498933179   3.468658    4.370206 2.221507e-02
+#> 7    Older_12  0.04824471 0.007342443   6.570662   66.576509 9.028441e-09
+#>          2.5 %      97.5 %
+#> 1 -1.065325602 -0.99982705
+#> 2 -0.045037899 -0.01090533
+#> 3  0.004208899  0.03057526
+#> 4  1.541134323  2.33692922
+#> 5  1.052782213  1.84035234
+#> 6  0.390442299  3.07081445
+#> 7  0.033587422  0.06290201
 ```
 
 We can also look at the traceplot of the imputations as well:

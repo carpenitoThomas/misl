@@ -149,7 +149,7 @@ misl <- function(dataset,
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
         }else if(outcome_type== "categorical"){
           # This is a built in protector because the current MISL package does not update predictions properly for mean
-          if(cat_method == "Lrnr_mean" & length(cat_method == 1)){
+          if(length(cat_method == 1)  & cat_method == "Lrnr_mean"){
             predicted_values <- as.character(sample(dataset[[column]][!is.na(dataset[[column]])],1))
           }else{
             predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
