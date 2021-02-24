@@ -43,7 +43,7 @@ Here's an example with the nhanes data in which we use `misl()` imputation and t
 ```{r}
 library(misl)
 
-misl_imp <- misl(misl::abalone, maxit = 5, m = 5, quiet = FALSE,
+misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = FALSE,
                   con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth", "Lrnr_glmnet", "Lrnr_polspline"),
                   bin_method = c("Lrnr_mean", "Lrnr_earth", "Lrnr_glm_fast"),
                   cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
@@ -68,31 +68,24 @@ library(future)
 
 # Sequential dataset processessing, Sequential super learning  (default)
 plan(list(sequential,sequential))
-seq_seq <- misl(nhanes)
+seq_seq <- misl(abalone)
 
 # Sequential dataset processessing, paralell super learning (8) 
 plan(list(sequential,tweak(multisession, workers = 8)))
-seq_par <- misl(nhanes)
+seq_par <- misl(abalone)
 
 # Paralelle dataset processessing (8), sequential super learning 
 plan(list(tweak(multisession, workers = 5), sequential))
-par_seq <- misl(nhanes)
+par_seq <- misl(abalone)
 
 # paralell dataset processessing (4), paralell super learning (2) 
 plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
-par_par <- misl(nhanes)
+par_par <- misl(abalone)
 
 # paralell dataset processing to ensure you don't overload your computer
 plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
-par_safe <- misl(nhanes)
+par_safe <- misl(abalone)
 
 ```
 
 Reminder, paralellizing code is not a silver bullet to automate making runtime processes faster. Make sure you have an understanding of the capacity of your computer. Further information about the topology of running code in paralell can be found in the future package.
-
-
-
-
-
-
-

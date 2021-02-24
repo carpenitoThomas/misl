@@ -35,7 +35,7 @@ misl <- function(dataset,
   imputed_datasets <- vector("list", m)
 
   # This apply function defines each of the imputed m datasets
-  imputed_datasets <- future.apply::future_lapply(future.stdout = NA, seq_along(1:m), function(m_loop){
+  imputed_datasets <- future.apply::future_lapply(future.stdout = NA, future.seed=TRUE, seq_along(1:m), function(m_loop){
 
     # Do users want to know which dataset they are imputing?
     if(!quiet){print(paste("Imputing dataset:", m_loop))}
@@ -50,6 +50,13 @@ misl <- function(dataset,
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
 
+    # As with all gibbs sampling methods, we will need to initialize the starting dataframe.
+    # You can see in this intialize function: https://github.com/amices/mice/blob/46171f911af7c7c668b4bffc3976f5669436bafd/R/initialize.imp.R
+    # This is step 2 of https://stefvanbuuren.name/fimd/sec-FCS.html#def:mice
+    for(column_number in seq_along(dataset_master_copy)){
+      dataset_master_copy[is.na(dataset_master_copy[[column_number]]), column_number] <-  impute_placeholders(dataset_master_copy, column_number, missing_default)
+    }
+
     # Next, we begin the iterations within each dataset.
     for(i_loop in seq_along(1:maxit)){
 
@@ -63,12 +70,6 @@ misl <- function(dataset,
         # This is our y_dot_obs and x_dot_obs
         # https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
         full_dataframe <- dataset_master_copy[!is.na(dataset[[column]]), ]
-
-        # Here, we need to fill in the remaining empty cells and we do this with random sampling.
-        # This is step 2 of https://stefvanbuuren.name/fimd/sec-FCS.html#def:mice
-        for(column_number in seq_along(full_dataframe)){
-          full_dataframe[is.na(full_dataframe[[column_number]]), column_number] <-  impute_placeholders(full_dataframe, column_number, missing_default)
-        }
 
         # To avoid complications with variance estimates of the ensemble, we will use bootstrapping
         # See note below algorithm: https://stefvanbuuren.name/fimd/sec-pmm.html#def:pmm
@@ -99,7 +100,7 @@ misl <- function(dataset,
         for(learner in learners){
           # We need to add a bit of code until a PR is accepted for the SL3 package for using bayesGLM (2/23/21)
           if(learner == "SL.bayesglm"){
-            code.lm <- paste(learner, " <- sl3::Lrnr_pkg_SuperLearner$new(\"SL.ranger\")")
+            code.lm <- paste(learner, " <- sl3::Lrnr_pkg_SuperLearner$new(\"SL.bayesglm\")")
           }else{
             code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
           }
@@ -121,18 +122,12 @@ misl <- function(dataset,
         sl_stack_fit <- sl_sched$compute()
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
-        # We are only interested in those values for which our dataset[[column]] is missing, but we can make predictions on the entire dataset, that's OK!
-        dataset_copy <- dataset_master_copy
-        for(column_number in seq_along(dataset_copy)){
-          # If this is the first iteration then we're going to have missing values for some of our rows.
-          dataset_copy[is.na(dataset_copy[[column_number]]), column_number] <- impute_placeholders(dataset, column_number, missing_default)
-        }
 
         # Here we can create the predictions and then we can match them with the hot-deck method
         # Interestingly, there are 4 different ways we can match: https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
         # But, we're going to follow the bootstrap matching method: https://stefvanbuuren.name/fimd/sec-cart.html#sec:cartoverview
         # Which is interesting becuase it looks like our beta hat and beta dot are one in the same: https://stefvanbuuren.name/fimd/sec-categorical.html
-        predictions_task <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = yvar)
+        predictions_task <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar)
         predictions <- sl_stack_fit$predict(predictions_task)
 
         # Here we can begin selection from a canidate donor
@@ -155,7 +150,7 @@ misl <- function(dataset,
         }else if(outcome_type== "categorical"){
           # This is a built in protector because the current MISL package does not update predictions properly for mean
           if(cat_method == "Lrnr_mean" & length(cat_method == 1)){
-            predicted_values <- as.character(sample(dataset[[column]], 1))
+            predicted_values <- as.character(sample(dataset[[column]][!is.na(dataset[[column]])],1))
           }else{
             predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
           }

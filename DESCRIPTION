@@ -26,7 +26,8 @@ Imports:
     delayed,
     future.apply,
     Hmisc,
-    ggplot2
+    ggplot2,
+    magrittr
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr

@@ -9,10 +9,10 @@ misl(
   m = 5,
   maxit = 5,
   seed = NA,
-  con_method = c("Lrnr_mean", "Lrnr_glm"),
-  bin_method = c("Lrnr_mean", "Lrnr_glm"),
+  con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
+  bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
   cat_method = c("Lrnr_mean"),
-  missing_default = "mean",
+  missing_default = "sample",
   quiet = TRUE
 )
 }
