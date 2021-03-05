@@ -122,7 +122,7 @@ misl <- function(dataset,
         # Interestingly, there are 4 different ways we can match: https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
         # But, we're going to follow the bootstrap matching method: https://stefvanbuuren.name/fimd/sec-cart.html#sec:cartoverview
         # Which is interesting becuase it looks like our beta hat and beta dot are one in the same: https://stefvanbuuren.name/fimd/sec-categorical.html
-        predictions_task <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar)
+        predictions_task <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
         predictions <- sl_stack_fit$predict(predictions_task)
 
         # Here we can begin selection from a canidate donor
