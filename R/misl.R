@@ -92,18 +92,13 @@ misl <- function(dataset,
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
                categorical = cat_method,
-               binary = bin_method ,
+               binomial = bin_method ,
                continuous = con_method)
 
         # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
         for(learner in learners){
-          # We need to add a bit of code until a PR is accepted for the SL3 package for using bayesGLM (2/23/21)
-          if(learner == "SL.bayesglm"){
-            code.lm <- paste(learner, " <- sl3::Lrnr_pkg_SuperLearner$new(\"SL.bayesglm\")")
-          }else{
-            code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
-          }
+          code.lm <- paste(learner, " <- sl3::", learner, "$new()", sep="")
           eval(parse(text=code.lm))
           learner_list <- c(learner, learner_list)
         }
