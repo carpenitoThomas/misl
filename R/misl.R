@@ -86,12 +86,8 @@ misl <- function(dataset,
         # Specifying the outcome_type will be helpful for checking learners.
         outcome_type <- check_datatype(dataset[[yvar]])
 
-        print("***")
-        print(outcome_type)
-        print("***")
-
         # First, define the task using our bootstrap_sample (this helps with variability in imputations)
-        sl3_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
+        sl3_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
 
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
@@ -139,7 +135,7 @@ misl <- function(dataset,
         # But also PMM didn't distinguish how one matches when using bootstrap?
         # So, we're not going to be matching with binary or categorical variables, we can just use sampling from their distribution.
         # https://stefvanbuuren.name/fimd/sec-categorical.html
-        if(outcome_type == "binary"){
+        if(outcome_type == "binomial"){
           predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
