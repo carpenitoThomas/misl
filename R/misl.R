@@ -86,6 +86,10 @@ misl <- function(dataset,
         # Specifying the outcome_type will be helpful for checking learners.
         outcome_type <- check_datatype(dataset[[yvar]])
 
+        print("***")
+        print(outcome_type)
+        print("***")
+
         # First, define the task using our bootstrap_sample (this helps with variability in imputations)
         sl3_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar)
 
