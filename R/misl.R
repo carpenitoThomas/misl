@@ -127,11 +127,13 @@ misl <- function(dataset,
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
 
-        # This bit of code needs some further thought... basically if the outcome is categorical and the bootstrap sample does NOT include the same number of levels
-        # as the original dataset (from the nature of sampling), then we need to re-level our data we are predicting on to match the categorical outcome...
+        # This bit of code needs some further thought... basically if any of the columns are categorical and the bootstrap sample does NOT include the same number of levels
+        # as the original dataset (from the nature of sampling), then we need to re-level our data we are predicting on to match the categorical column...
         # Again, this will need futher thought....
-        if(outcome_type == "categorical"){
-          dataset_master_copy[[yvar]] <- factor(dataset_master_copy[[yvar]], levels=levels(bootstrap_sample[[yvar]]))
+        for(column_number in seq_along(dataset_master_copy)){
+          if(is.factor(dataset_master_copy[[column_number]])){
+            dataset_master_copy[[column_number]] <- factor(dataset_master_copy[[column_number]], levels=levels(bootstrap_sample[[column_number]]))
+          }
         }
         # Here we can create the predictions and then we can match them with the hot-deck method
         # Interestingly, there are 4 different ways we can match: https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
