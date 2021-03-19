@@ -78,10 +78,6 @@ misl <- function(dataset,
         # We can also see the following: https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
         bootstrap_sample <- dplyr::sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
-        # Because this is a bootstrap sample, we need to relevel the factor columns depending on what factors are included.
-        # If this is not done then it will crash the learners in SL3.
-        bootstrap_sample <- droplevels(bootstrap_sample)
-
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(bootstrap_sample[ , -which(names(bootstrap_sample) %in% c(column)), drop = FALSE])
         if(!is.na(ignore_predictors[1])){
@@ -103,6 +99,24 @@ misl <- function(dataset,
                categorical = cat_method,
                binomial = bin_method ,
                continuous = con_method)
+
+        # If after drawing a bootstrap sample, any of the columns DO NOT contain the same factors as in the original data, then the algorithm will fail
+        # This is set up by design becuase the super learner cannot make out of sample predictions and the meta-learner will not know how
+        # to deal with the different array types. Should this happen, we will print a message to the user letting them know that the machine learning algorithms could NOT be used
+        # in this instance and instead for this iteration they must rely on the mean and a series of independent binomial samples. This will be updated should more learners become available.
+        if(outcome_type == "categorical"){
+          re_assign_cat_learners <- FALSE
+          for(column_number in seq_along(bootstrap_sample)){
+            if(is.factor(temp_data[[column_number]])){
+              if(length(levels(droplevels(bootstrap_sample)[[column_number]])) != length(levels(bootstrap_sample[[column_number]]))){
+                re_assign_cat_learners <- TRUE
+              }
+            }
+          }
+          if(re_assign_cat_learners){
+            learners <- c("Lrnr_mean", "Lrnr_independent_binomial")
+          }
+        }
 
         # Next, iterate through each of the supplied learners to build the SL3 learner list
         learner_list <- c()
@@ -127,14 +141,6 @@ misl <- function(dataset,
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
 
-        # This bit of code needs some further thought... basically if any of the columns are categorical and the bootstrap sample does NOT include the same number of levels
-        # as the original dataset (from the nature of sampling), then we need to re-level our data we are predicting on to match the categorical column...
-        # Again, this will need futher thought....
-        for(column_number in seq_along(dataset_master_copy)){
-          if(is.factor(dataset_master_copy[[column_number]])){
-            dataset_master_copy[[column_number]] <- factor(dataset_master_copy[[column_number]], levels=levels(bootstrap_sample[[column_number]]))
-          }
-        }
         # Here we can create the predictions and then we can match them with the hot-deck method
         # Interestingly, there are 4 different ways we can match: https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
         # But, we're going to follow the bootstrap matching method: https://stefvanbuuren.name/fimd/sec-cart.html#sec:cartoverview
