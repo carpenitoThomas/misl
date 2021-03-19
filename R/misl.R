@@ -7,6 +7,7 @@
 #' @param con_method A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}.
 #' @param bin_method A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.
 #' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
+#' @param ignore_predictors A vector of strings to be supplied for ignoring in the prediction of other variables. The default is \code{ignore_predictors = NA}
 #' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #'
@@ -24,6 +25,7 @@ misl <- function(dataset,
                  con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                  bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                  cat_method = c("Lrnr_mean"),
+                 ignore_predictors = NA,
                  missing_default = "sample",
                  quiet = TRUE
                  ){
@@ -82,6 +84,9 @@ misl <- function(dataset,
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(bootstrap_sample[ , -which(names(bootstrap_sample) %in% c(column)), drop = FALSE])
+        if(!is.na(ignore_predictors[1])){
+          xvars <- xvars[-which(xvars %in% ignore_predictors)]
+        }
         yvar <- column
 
         # We can begin defining our impuation model or, super learning
