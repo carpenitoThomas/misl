@@ -76,6 +76,10 @@ misl <- function(dataset,
         # We can also see the following: https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
         bootstrap_sample <- dplyr::sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
+        # Because this is a bootstrap sample, we need to relevel the factor columns depending on what factors are included.
+        # If this is not done then it will crash the learners in SL3.
+        bootstrap_sample <- droplevels(bootstrap_sample)
+
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
         xvars <- colnames(bootstrap_sample[ , -which(names(bootstrap_sample) %in% c(column)), drop = FALSE])
         yvar <- column
