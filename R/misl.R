@@ -107,7 +107,7 @@ misl <- function(dataset,
         if(outcome_type == "categorical"){
           re_assign_cat_learners <- FALSE
           for(column_number in seq_along(bootstrap_sample)){
-            if(is.factor(temp_data[[column_number]])){
+            if(is.factor(bootstrap_sample[[column_number]])){
               if(length(levels(droplevels(bootstrap_sample)[[column_number]])) != length(levels(bootstrap_sample[[column_number]]))){
                 re_assign_cat_learners <- TRUE
               }
