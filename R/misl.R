@@ -136,7 +136,7 @@ misl <- function(dataset,
         # We can then go ahead and train our model
         sl_train <- sl3::delayed_learner_train(sl, sl3_task)
         # This bit of code can be used if people wanted multi-threading (depending on computer capacity)
-        sl_sched <- delayed::Scheduler$new(sl_train, delayed::FutureJob, verbose = FALSE)
+        sl_sched <- delayed::Scheduler$new(sl_train, delayed::FutureJob, verbose = !quiet)
         sl_stack_fit <- sl_sched$compute()
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
