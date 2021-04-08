@@ -56,7 +56,7 @@ misl <- function(dataset,
     # You can see in this intialize function: https://github.com/amices/mice/blob/46171f911af7c7c668b4bffc3976f5669436bafd/R/initialize.imp.R
     # This is step 2 of https://stefvanbuuren.name/fimd/sec-FCS.html#def:mice
     for(column_number in seq_along(dataset_master_copy)){
-      dataset_master_copy[is.na(dataset_master_copy[[column_number]]), column_number] <-  impute_placeholders(dataset_master_copy, column_number, missing_default)
+      dataset_master_copy[is.na(dataset_master_copy[[column_number]]), column_number] <-  sample(dataset[[column_number]][!is.na(dataset[[column_number]])], sum(is.na(dataset[[column_number]])), replace = TRUE)
     }
 
     # Next, we begin the iterations within each dataset.
