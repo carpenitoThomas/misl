@@ -76,6 +76,7 @@ misl <- function(dataset,
         # To avoid complications with variance estimates of the ensemble, we will use bootstrapping
         # See note below algorithm: https://stefvanbuuren.name/fimd/sec-pmm.html#def:pmm
         # We can also see the following: https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
+        # Note, for this method we still need to calculate beta_hat and beta_dot, unfortunately this means super learner twice...
         bootstrap_sample <- dplyr::sample_n(full_dataframe, size = nrow(full_dataframe), replace = TRUE)
 
         # Next identify the predictors (xvars) and outcome (yvar) depending on the column imputing
@@ -91,8 +92,9 @@ misl <- function(dataset,
         # Specifying the outcome_type will be helpful for checking learners.
         outcome_type <- check_datatype(dataset[[yvar]])
 
-        # First, define the task using our bootstrap_sample (this helps with variability in imputations)
-        sl3_task <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
+        # First, define the task using our bootstrap_sample (this helps with variability in imputations) and our full_dataframe sample
+        sl3_task_boot_dot <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
+        sl3_task_full_hat <- sl3::make_sl3_Task(full_dataframe, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
 
         # Depending on the outcome, we need to build out the learners
         learners <- switch(outcome_type,
@@ -133,20 +135,29 @@ misl <- function(dataset,
         # Then we make and train the Super Learner
         sl <- sl3::Lrnr_sl$new(learners = stack)
 
-        # We can then go ahead and train our model
-        sl_train <- sl3::delayed_learner_train(sl, sl3_task)
+        # We can then go ahead and train our model on both bootstrao and full_dataframes
+        sl_train_boot_dot <- sl3::delayed_learner_train(sl, sl3_task_boot_dot)
+        sl_train_full_hat <- sl3::delayed_learner_train(sl, sl3_task_full_hat)
+
         # This bit of code can be used if people wanted multi-threading (depending on computer capacity)
-        sl_sched <- delayed::Scheduler$new(sl_train, delayed::FutureJob, verbose = !quiet)
-        sl_stack_fit <- sl_sched$compute()
+        sl_sched_boot_dot <- delayed::Scheduler$new(sl_train_boot_dot, delayed::FutureJob)
+        sl_sched_full_hat <- delayed::Scheduler$new(sl_train_full_hat, delayed::FutureJob)
+
+        sl_stack_fit_boot_dot <- sl_sched_boot_dot$compute()
+        sl_stack_fit_full_hat <- sl_sched_full_hat$compute()
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
 
         # Here we can create the predictions and then we can match them with the hot-deck method
         # Interestingly, there are 4 different ways we can match: https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
-        # But, we're going to follow the bootstrap matching method: https://stefvanbuuren.name/fimd/sec-cart.html#sec:cartoverview
-        # Which is interesting becuase it looks like our beta hat and beta dot are one in the same: https://stefvanbuuren.name/fimd/sec-categorical.html
-        predictions_task <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
-        predictions <- sl_stack_fit$predict(predictions_task)
+        # Original PMM uses type 1 matching, so that's what we are going to use.
+        # Future iterations of this algorithm should allow for changes to this.
+
+        predictions_task_boot_dot <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
+        predictions_task_full_hat <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
+
+        predictions_boot_dot <- sl_stack_fit_boot_dot$predict(predictions_task_boot_dot)
+        predictions_full_hat <- sl_stack_fit_full_hat$predict(predictions_task_full_hat)
 
         # Here we can begin selection from a canidate donor
         # Note, this is unclear... becuase we are using a technique like CART but we don't have terminal nodes.
@@ -154,19 +165,19 @@ misl <- function(dataset,
         # So, we're not going to be matching with binary or categorical variables, we can just use sampling from their distribution.
         # https://stefvanbuuren.name/fimd/sec-categorical.html
         if(outcome_type == "binomial"){
-          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions)
+          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions_boot_dot)
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
           # If continuous, we can do matching
           # Find the 5 closest donors and making a random draw from them
           list_of_matches <- c()
-          for(value in seq_along(predictions)){
-            distance <- head(order(abs(predictions[value] - ifelse(is.na(dataset[[column]]), NA, predictions))),5)
+          for(value in seq_along(predictions_boot_dot)){
+            distance <- head(order(abs(predictions_boot_dot[value] - ifelse(is.na(dataset[[column]]), NA, predictions_full_hat))),5)
             list_of_matches[value] <- ifelse(is.na(dataset[[column]]), NA, dataset[[column]])[sample(distance,1)]
           }
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
         }else if(outcome_type== "categorical"){
-          predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions),1)
+          predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions_boot_dot),1)
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
         # Append to the trace plot only if a numeric column

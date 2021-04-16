@@ -42,8 +42,9 @@ Here's an example with the nhanes data in which we use `misl()` imputation and t
 
 ```{r}
 library(misl)
+set.seed(123)
 
-misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = TRUE,
+misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = FALSE,
                   con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth", "Lrnr_glmnet", "Lrnr_polspline"),
                   bin_method = c("Lrnr_mean", "Lrnr_earth", "Lrnr_glm_fast"),
                   cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
