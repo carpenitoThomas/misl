@@ -137,14 +137,11 @@ misl <- function(dataset,
 
         # We can then go ahead and train our model on both bootstrao and full_dataframes
         sl_train_boot_dot <- sl3::delayed_learner_train(sl, sl3_task_boot_dot)
-        sl_train_full_hat <- sl3::delayed_learner_train(sl, sl3_task_full_hat)
 
         # This bit of code can be used if people wanted multi-threading (depending on computer capacity)
         sl_sched_boot_dot <- delayed::Scheduler$new(sl_train_boot_dot, delayed::FutureJob)
-        sl_sched_full_hat <- delayed::Scheduler$new(sl_train_full_hat, delayed::FutureJob)
 
         sl_stack_fit_boot_dot <- sl_sched_boot_dot$compute()
-        sl_stack_fit_full_hat <- sl_sched_full_hat$compute()
 
         # We are now at the point where we can obtain predictions for matching candidates using X_miss
 
@@ -154,10 +151,20 @@ misl <- function(dataset,
         # Future iterations of this algorithm should allow for changes to this.
 
         predictions_task_boot_dot <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
-        predictions_task_full_hat <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
 
         predictions_boot_dot <- sl_stack_fit_boot_dot$predict(predictions_task_boot_dot)
-        predictions_full_hat <- sl_stack_fit_full_hat$predict(predictions_task_full_hat)
+
+
+        # This step actually only needs to compute if the outcome is continuous, saving some time:
+        if(outcome_type == "continuous"){
+          sl_train_full_hat <- sl3::delayed_learner_train(sl, sl3_task_full_hat)
+          sl_sched_full_hat <- delayed::Scheduler$new(sl_train_full_hat, delayed::FutureJob)
+
+          sl_stack_fit_full_hat <- sl_sched_full_hat$compute()
+
+          predictions_task_full_hat <- sl3::sl3_Task$new(dataset_master_copy, covariates = xvars, outcome = yvar, outcome_type = outcome_type )
+          predictions_full_hat <- sl_stack_fit_full_hat$predict(predictions_task_full_hat)
+        }
 
         # Here we can begin selection from a canidate donor
         # Note, this is unclear... becuase we are using a technique like CART but we don't have terminal nodes.
@@ -165,7 +172,13 @@ misl <- function(dataset,
         # So, we're not going to be matching with binary or categorical variables, we can just use sampling from their distribution.
         # https://stefvanbuuren.name/fimd/sec-categorical.html
         if(outcome_type == "binomial"){
-          predicted_values <- stats::rbinom(length(dataset_master_copy[[column]]), 1, predictions_boot_dot)
+          # We don't actually just make draws from a binomial distribution... but rather compare draws to that from a uniform distribution
+          # I think this is what was responsible for poor imputations before.
+          # https://stefvanbuuren.name/fimd/sec-categorical.html#def:binary
+          # https://github.com/cran/mice/blob/master/R/mice.impute.logreg.R
+          uniform_values <- runif(length(predictions_boot_dot))
+          predicted_values <- as.integer(uniform_values <= predictions_boot_dot)
+
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
           # If continuous, we can do matching
@@ -177,7 +190,15 @@ misl <- function(dataset,
           }
           dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
         }else if(outcome_type== "categorical"){
-          predicted_values <- Hmisc::rMultinom(sl3::unpack_predictions(predictions_boot_dot),1)
+          # Another instance where draws don't just come from a multinomial distribution.
+
+          # https://github.com/cran/mice/blob/master/R/mice.impute.polyreg.R
+          uniform_values <- rep(runif(length(predictions_boot_dot)), each = length(levels(dataset[[column]])))
+          post <- sl3::unpack_predictions(predictions_boot_dot)
+          draws <- uniform_values > apply(post, 1, cumsum)
+          idx <- 1 + apply(draws, 2, sum)
+          predicted_values_new <- levels(dataset[[column]])[idx]
+
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
         # Append to the trace plot only if a numeric column
