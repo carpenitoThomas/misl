@@ -197,7 +197,7 @@ misl <- function(dataset,
           post <- sl3::unpack_predictions(predictions_boot_dot)
           draws <- uniform_values > apply(post, 1, cumsum)
           idx <- 1 + apply(draws, 2, sum)
-          predicted_values_new <- levels(dataset[[column]])[idx]
+          predicted_values <- levels(dataset[[column]])[idx]
 
           dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
         }
