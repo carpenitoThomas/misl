@@ -47,7 +47,8 @@ misl <- function(dataset,
 
     # Identifies which columns need to be imputed. According to van Buren, this order does not matter.
     # https://stefvanbuuren.name/fimd/sec-algoptions.html
-    column_order <- colnames(dataset)[colSums(is.na(dataset))!=0]
+    # I think this order MIGHT matter with MISL... this should be explored further
+    column_order <- sample(colnames(dataset)[colSums(is.na(dataset))!=0])
 
     # Retain a copy of the dataset for each of the new m datasets
     dataset_master_copy <- dataset
