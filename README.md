@@ -37,116 +37,52 @@ imputation and then pool the results:
 
 ``` r
 library(misl)
+#> 
+#> Attaching package: 'misl'
+#> The following object is masked from 'package:graphics':
+#> 
+#>     plot
+#> The following object is masked from 'package:base':
+#> 
+#>     plot
+set.seed(123)
 
 misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = TRUE,
-                  con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth", "Lrnr_glmnet", "Lrnr_polspline"),
-                  bin_method = c("Lrnr_mean", "Lrnr_earth", "Lrnr_glm_fast"),
-                  cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
-
-#> Warning in if (length(cat_method == 1) & cat_method == "Lrnr_mean") {: the
-#> condition has length > 1 and only the first element will be used
+                  con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+                  bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+                  cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(Whole_Weight ~ Sex + Length + Diameter + Height + Older_12, data = y$datasets)
 })
 
 summary(mice::pool(misl_modeling), conf.int = TRUE)
-#>          term    estimate   std.error  statistic          df      p.value
-#> 1 (Intercept) -1.03257632 0.016700130 -61.830436 2249.171260 0.000000e+00
-#> 2        SexI -0.02797162 0.008661970  -3.229244  231.724751 1.421043e-03
-#> 3        SexM  0.01739208 0.006720929   2.587749 1534.027044 9.751724e-03
-#> 4      Length  1.93903177 0.189889013  10.211395   18.684182 4.446959e-09
-#> 5    Diameter  1.44656728 0.197547685   7.322623   72.204451 2.759397e-10
-#> 6      Height  1.73062838 0.498933179   3.468658    4.370206 2.221507e-02
-#> 7    Older_12  0.04824471 0.007342443   6.570662   66.576509 9.028441e-09
+#>          term    estimate   std.error  statistic         df      p.value
+#> 1 (Intercept) -1.02932002 0.016927014 -60.809307 1310.67176 0.000000e+00
+#> 2        SexI -0.02767941 0.008537256  -3.242190  338.20348 1.304257e-03
+#> 3        SexM  0.01815814 0.007203195   2.520845  144.60212 1.279237e-02
+#> 4      Length  1.81451491 0.146948804  12.347939  246.29487 0.000000e+00
+#> 5    Diameter  1.67524674 0.191253346   8.759307   94.16393 7.860379e-14
+#> 6      Height  1.49665468 0.158197280   9.460685   15.49830 7.786931e-08
+#> 7    Older_12  0.05020394 0.006728222   7.461696  339.90279 7.212009e-13
 #>          2.5 %      97.5 %
-#> 1 -1.065325602 -0.99982705
-#> 2 -0.045037899 -0.01090533
-#> 3  0.004208899  0.03057526
-#> 4  1.541134323  2.33692922
-#> 5  1.052782213  1.84035234
-#> 6  0.390442299  3.07081445
-#> 7  0.033587422  0.06290201
+#> 1 -1.062527025 -0.99611302
+#> 2 -0.044472213 -0.01088660
+#> 3  0.003920984  0.03239529
+#> 4  1.525078301  2.10395153
+#> 5  1.295517359  2.05497613
+#> 6  1.160406950  1.83290241
+#> 7  0.036969748  0.06343814
 ```
 
-We can also look at the traceplot of the imputations as well:
+We can also look at the traceplot of the imputations as
+well:
 
 ``` r
-traceplot(misl_imp)
+plot(misl_imp)
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-3-2.png" width="100%" />
 
 This package also supports paralellization with the `future` package.
 One can choose to paralellize either the outside creation of datasets or

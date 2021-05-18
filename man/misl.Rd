@@ -12,6 +12,7 @@ misl(
   con_method = c("Lrnr_mean", "Lrnr_glm_fast"),
   bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
   cat_method = c("Lrnr_mean"),
+  ignore_predictors = NA,
   missing_default = "sample",
   quiet = TRUE
 )
@@ -30,6 +31,8 @@ misl(
 \item{bin_method}{A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.}
 
 \item{cat_method}{A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.}
+
+\item{ignore_predictors}{A vector of strings to be supplied for ignoring in the prediction of other variables. The default is \code{ignore_predictors = NA}}
 
 \item{missing_default}{A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.}
 
