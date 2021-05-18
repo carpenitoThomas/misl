@@ -15,22 +15,16 @@ knitr::opts_chunk$set(
 
 # Multiple Imputation by Super Learning (MISL)
 
-[![Travis-CI Build Status](https://travis-ci.com/carpenitoThomas/misl.svg?token=u9TyfsxVjq6xxvc5h473&branch=master)](https://travis-ci.com/carpenitoThomas/misl)
-[![Coverage Status](https://codecov.io/gh/carpenitoThomas/misl/branch/master/graph/badge.svg?token=C157LCBBJI)](https://codecov.io/gh/carpenitoThomas/misl)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 
 The goal of MISL (Multiple Imputation by Super Learning) is to create multiply imputed datasets using the super learning framework. This package builds heavily off of the `sl3` and `mice` packages.
 
+This method has been submitted for publication and is currently in review.
+
 ## Installation
 
-You can install the released version of misl from [CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("misl")
-```
-
-And the development version from [GitHub](https://github.com/) with:
+The MISL algorithm is not yet available on CRAN; instead, please use the development version available here on Github. To download the development version use:
 
 ``` r
 # install.packages("devtools")
@@ -38,7 +32,7 @@ devtools::install_github("carpenitoThomas/misl")
 ```
 ## Example
 
-Here's an example with the nhanes data in which we use `misl()` imputation and then pool the results:
+Here's an example with abalone data in which we use `misl()` imputation and then pool the results:
 
 ```{r}
 library(misl)
@@ -62,7 +56,7 @@ We can also look at the traceplot of the imputations as well:
 plot(misl_imp)
 ```
 
-This package also supports paralellization with the `future` package. One can choose to paralellize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):
+This package also supports parallel processing with the `future` package. One can choose to parallelize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):
 
 ```{r, echo = TRUE, eval= FALSE}
 library(future)
@@ -71,22 +65,22 @@ library(future)
 plan(list(sequential,sequential))
 seq_seq <- misl(abalone)
 
-# Sequential dataset processessing, paralell super learning (8) 
+# Sequential dataset processessing, parallel super learning (8) 
 plan(list(sequential,tweak(multisession, workers = 8)))
 seq_par <- misl(abalone)
 
-# Paralelle dataset processessing (8), sequential super learning 
+# Parallel dataset processessing (8), sequential super learning 
 plan(list(tweak(multisession, workers = 5), sequential))
 par_seq <- misl(abalone)
 
-# paralell dataset processessing (4), paralell super learning (2) 
+# Parallel dataset processessing (4), parallel super learning (2) 
 plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
 par_par <- misl(abalone)
 
-# paralell dataset processing to ensure you don't overload your computer
+# Parallel dataset processing to ensure you don't overload your computer
 plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
 par_safe <- misl(abalone)
 
 ```
 
-Reminder, paralellizing code is not a silver bullet to automate making runtime processes faster. Make sure you have an understanding of the capacity of your computer. Further information about the topology of running code in paralell can be found in the future package.
+Reminder, parallel code is not a silver bullet to automate making runtime processes faster. Make sure you have an understanding of the capacity of your computer. Further information about the topology of running code in parallel can be found in the future package.

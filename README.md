@@ -3,10 +3,6 @@
 
 # Multiple Imputation by Super Learning (MISL)
 
-[![Travis-CI Build
-Status](https://travis-ci.com/carpenitoThomas/misl.svg?token=u9TyfsxVjq6xxvc5h473&branch=master)](https://travis-ci.com/carpenitoThomas/misl)
-[![Coverage
-Status](https://codecov.io/gh/carpenitoThomas/misl/branch/master/graph/badge.svg?token=C157LCBBJI)](https://codecov.io/gh/carpenitoThomas/misl)
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
@@ -14,16 +10,14 @@ The goal of MISL (Multiple Imputation by Super Learning) is to create
 multiply imputed datasets using the super learning framework. This
 package builds heavily off of the `sl3` and `mice` packages.
 
+This method has been submitted for publication and is currently in
+review.
+
 ## Installation
 
-You can install the released version of misl from
-[CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("misl")
-```
-
-And the development version from [GitHub](https://github.com/) with:
+The MISL algorithm is not yet available on CRAN; instead, please use the
+development version available here on Github. To download the
+development version use:
 
 ``` r
 # install.packages("devtools")
@@ -32,8 +26,8 @@ devtools::install_github("carpenitoThomas/misl")
 
 ## Example
 
-Here’s an example with the nhanes data in which we use `misl()`
-imputation and then pool the results:
+Here’s an example with abalone data in which we use `misl()` imputation
+and then pool the results:
 
 ``` r
 library(misl)
@@ -57,22 +51,22 @@ misl_modeling <- lapply(misl_imp, function(y){
 })
 
 summary(mice::pool(misl_modeling), conf.int = TRUE)
-#>          term    estimate   std.error  statistic         df      p.value
-#> 1 (Intercept) -1.02932002 0.016927014 -60.809307 1310.67176 0.000000e+00
-#> 2        SexI -0.02767941 0.008537256  -3.242190  338.20348 1.304257e-03
-#> 3        SexM  0.01815814 0.007203195   2.520845  144.60212 1.279237e-02
-#> 4      Length  1.81451491 0.146948804  12.347939  246.29487 0.000000e+00
-#> 5    Diameter  1.67524674 0.191253346   8.759307   94.16393 7.860379e-14
-#> 6      Height  1.49665468 0.158197280   9.460685   15.49830 7.786931e-08
-#> 7    Older_12  0.05020394 0.006728222   7.461696  339.90279 7.212009e-13
-#>          2.5 %      97.5 %
-#> 1 -1.062527025 -0.99611302
-#> 2 -0.044472213 -0.01088660
-#> 3  0.003920984  0.03239529
-#> 4  1.525078301  2.10395153
-#> 5  1.295517359  2.05497613
-#> 6  1.160406950  1.83290241
-#> 7  0.036969748  0.06343814
+#>          term     estimate   std.error   statistic         df      p.value
+#> 1 (Intercept) -0.987047919 0.021019630 -46.9583879  26.057703 0.000000e+00
+#> 2        SexI -0.043276012 0.009544576  -4.5340949  38.854378 5.414110e-05
+#> 3        SexM  0.000770776 0.006959510   0.1107515 161.308054 9.119511e-01
+#> 4      Length  1.349568205 0.179038602   7.5378616  25.961408 5.350155e-08
+#> 5    Diameter  2.225230763 0.200859265  11.0785567  57.582699 6.661338e-16
+#> 6      Height  1.388076073 0.268363687   5.1723692   5.787563 2.306323e-03
+#> 7    Older_12  0.050900904 0.007995520   6.3661784  23.288962 1.603561e-06
+#>         2.5 %      97.5 %
+#> 1 -1.03024973 -0.94384611
+#> 2 -0.06258405 -0.02396797
+#> 3 -0.01297272  0.01451427
+#> 4  0.98152246  1.71761395
+#> 5  1.82310521  2.62735631
+#> 6  0.72552659  2.05062555
+#> 7  0.03437226  0.06742955
 ```
 
 We can also look at the traceplot of the imputations as
@@ -84,11 +78,11 @@ plot(misl_imp)
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-3-2.png" width="100%" />
 
-This package also supports paralellization with the `future` package.
-One can choose to paralellize either the outside creation of datasets or
-the learners in the super learner library (or both\!). The following
-snippet explains how this can be accomplished with four test-case
-scenarios (with an assumption that our computer has 8 cores):
+This package also supports parallel processing with the `future`
+package. One can choose to parallelize either the outside creation of
+datasets or the learners in the super learner library (or both\!). The
+following snippet explains how this can be accomplished with four
+test-case scenarios (with an assumption that our computer has 8 cores):
 
 ``` r
 library(future)
@@ -97,24 +91,24 @@ library(future)
 plan(list(sequential,sequential))
 seq_seq <- misl(abalone)
 
-# Sequential dataset processessing, paralell super learning (8) 
+# Sequential dataset processessing, parallel super learning (8) 
 plan(list(sequential,tweak(multisession, workers = 8)))
 seq_par <- misl(abalone)
 
-# Paralelle dataset processessing (8), sequential super learning 
+# Parallel dataset processessing (8), sequential super learning 
 plan(list(tweak(multisession, workers = 5), sequential))
 par_seq <- misl(abalone)
 
-# paralell dataset processessing (4), paralell super learning (2) 
+# Parallel dataset processessing (4), parallel super learning (2) 
 plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
 par_par <- misl(abalone)
 
-# paralell dataset processing to ensure you don't overload your computer
+# Parallel dataset processing to ensure you don't overload your computer
 plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
 par_safe <- misl(abalone)
 ```
 
-Reminder, paralellizing code is not a silver bullet to automate making
+Reminder, parallel code is not a silver bullet to automate making
 runtime processes faster. Make sure you have an understanding of the
 capacity of your computer. Further information about the topology of
-running code in paralell can be found in the future package.
+running code in parallel can be found in the future package.

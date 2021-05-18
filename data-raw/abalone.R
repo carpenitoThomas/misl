@@ -5,7 +5,7 @@ library(mice)
 set.seed(1234)
 
 # load data set and take a peek
-abalone <- load(file = "data-raw/abalone.Rdata")
+abalone <- load(file = "data-raw/abalone.rdata")
 
 # add the column names
 colnames(abalone) <- c("Sex", "Length", "Diameter", "Height", "Whole_Weight", "Shuck_Weight", "Viscera_Weight", "Shell_Weight", "Rings")
@@ -23,9 +23,17 @@ mypatterns <- expand.grid(Sex = 0:1, Length = 0:1, Diameter = 0:1, Height = 0:1,
 mypatterns <- mypatterns[sample(1:nrow(mypatterns), replace = FALSE, 8),]
 mypatterns <- mypatterns[rowSums(mypatterns) != 0,]
 
-amputed_abalone <- mice::ampute(abalone, mech = "MCAR", prop = .50)
+amputed_abalone <- mice::ampute(abalone,
+                                mech = "MAR",
+                                patterns = mypatterns,
+                                prop = .50)
 
 abalone <- as_tibble(amputed_abalone$amp)
+
+abalone <- abalone %>%
+  mutate(
+    Sex = factor(Sex, labels = c("F", "I", "M"), levels = c(1,2,3))
+  )
 
 write_csv(abalone, "data-raw/abalone.csv")
 usethis::use_data(abalone, overwrite = TRUE, compress = 'xz')
