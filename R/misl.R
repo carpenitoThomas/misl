@@ -197,19 +197,16 @@ misl <- function(dataset,
           uniform_values <- runif(length(predictions_boot_dot))
 
           # Here we add a bit of code for sensitivity analyses
-          # Delta_cat will default be 1 so this won't change predictions
+          # Delta_cat will default be 1 so this won't change predictions even if specified by accident
           if(delta_adj){
             predicted_values <- as.integer(uniform_values <= (predictions_boot_dot / delta_cat))
           }else{
-            predicted_values <- as.integer(uniform_values <= (predictions_boot_dot / 1))
+            predicted_values <- as.integer(uniform_values <= predictions_boot_dot)
           }
 
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
-          # We can add a bit of augemntation here for the sensitivity analysis
-          # By default, this should not affect results as we will be adding 0, otherwise, augment the imputations
-          # I actually think in this instance we want to shift the *actualy* imputed values, not the predictions. Double check.
-          predictions_boot_dot <- predictions_boot_dot + delta_con
+          predictions_boot_dot <- predictions_boot_dot
 
           # If continuous, we can do matching
           # Find the 5 closest donors and making a random draw from them - there are a lot of ways to do matching
@@ -220,7 +217,14 @@ misl <- function(dataset,
             distance <- head(order(abs(predictions_boot_dot[value] - ifelse(is.na(dataset[[column]]), NA, predictions_full_hat))),5)
             list_of_matches[value] <- ifelse(is.na(dataset[[column]]), NA, dataset[[column]])[sample(distance,1)]
           }
-          dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
+          # We can add a bit of augemntation here for the sensitivity analysis
+          # By default, this should not affect results as we will be adding 0, otherwise, augment the imputations
+          if(delta_adj){
+            dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), (list_of_matches + delta_con), dataset[[column]])
+          }else{
+            dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
+          }
+
         }else if(outcome_type== "categorical"){
           # For categorical data we follow advice suggested by Van Buuren:
           # https://github.com/cran/mice/blob/master/R/mice.impute.polyreg.R
