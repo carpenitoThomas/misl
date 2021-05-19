@@ -15,7 +15,8 @@ misl(
   ignore_predictors = NA,
   quiet = TRUE,
   delta_con = 0,
-  delta_cat = 1
+  delta_cat = 1,
+  delta_var = NA
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ misl(
 \item{delta_con}{An integer to specify by how much continuous values should be shifted for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_con = 0}.}
 
 \item{delta_cat}{An integer to specify by how much binary/categorical values should be scaled for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_cat = 1}.}
+
+\item{delta_var}{A character to specify which variable (if any) to be augmented with the sensitivity analysis. The default is \code{delta_var = NA}.}
 }
 \value{
 A list of \code{m} full tibbles.

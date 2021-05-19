@@ -11,6 +11,7 @@
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #' @param delta_con An integer to specify by how much continuous values should be shifted for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_con = 0}.
 #' @param delta_cat An integer to specify by how much binary/categorical values should be scaled for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_cat = 1}.
+#' @param delta_var A character to specify which variable (if any) to be augmented with the sensitivity analysis. The default is \code{delta_var = NA}.
 #'
 #' @return A list of \code{m} full tibbles.
 #' @export
@@ -34,7 +35,8 @@ misl <- function(dataset,
                  ignore_predictors = NA,
                  quiet = TRUE,
                  delta_con = 0,
-                 delta_cat = 1
+                 delta_cat = 1,
+                 delta_var = NA
                  ){
 
   # TODO: Builds out more checks to ensure the MISL algorithm can run properly
@@ -81,6 +83,16 @@ misl <- function(dataset,
         # This is our y_dot_obs and x_dot_obs
         # https://stefvanbuuren.name/fimd/sec-linearnormal.html#def:normboot
         full_dataframe <- dataset_master_copy[!is.na(dataset[[column]]), ]
+
+        # This is a quick fix for the sensitivity analysis that will require further thought
+        # Essentially, we are chceking to see if this is the value we need to augment or not.
+        # If it's not, then no changes happen
+        delta_adj = FALSE
+        if(!is.na(delta_var)){
+          if(column == delta_var){
+            delta_adj = TRUE
+          }
+        }
 
         # To avoid complications with variance estimates of the ensemble, we will use bootstrapping
         # See note below algorithm: https://stefvanbuuren.name/fimd/sec-pmm.html#def:pmm
@@ -186,12 +198,17 @@ misl <- function(dataset,
 
           # Here we add a bit of code for sensitivity analyses
           # Delta_cat will default be 1 so this won't change predictions
-          predicted_values <- as.integer(uniform_values <= (predictions_boot_dot / delta_cat))
+          if(delta_adj){
+            predicted_values <- as.integer(uniform_values <= (predictions_boot_dot / delta_cat))
+          }else{
+            predicted_values <- as.integer(uniform_values <= (predictions_boot_dot / 1))
+          }
 
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
           # We can add a bit of augemntation here for the sensitivity analysis
           # By default, this should not affect results as we will be adding 0, otherwise, augment the imputations
+          # I actually think in this instance we want to shift the *actualy* imputed values, not the predictions. Double check.
           predictions_boot_dot <- predictions_boot_dot + delta_con
 
           # If continuous, we can do matching
@@ -212,9 +229,15 @@ misl <- function(dataset,
           # We need to add a bit of code in here that allows for the delta adjustment method for sensitivity analyses
           # The idea will be to choose a random column, scale it by the delta amount, and re-normalize to 1
           # Since the default scale parameter is 1, this shouldn't change predictions
-          sampled_delta_col <- sample(ncol(post),1)
-          post[, sampled_delta_col] <- post[, sampled_delta_col] / delta_cat
-          post <- t(scale(t(post), center = FALSE, scale = colSums(t(post))))
+          if(delta_adj){
+            sampled_delta_col <- sample(ncol(post),1)
+            post[, sampled_delta_col] <- post[, sampled_delta_col] / delta_cat
+            post <- t(scale(t(post), center = FALSE, scale = colSums(t(post))))
+          }else{
+            sampled_delta_col <- sample(ncol(post),1)
+            post[, sampled_delta_col] <- post[, sampled_delta_col] / 1
+            post <- t(scale(t(post), center = FALSE, scale = colSums(t(post))))
+          }
 
           # We can then continue with imputation as normal
           draws <- uniform_values > apply(post, 1, cumsum)
