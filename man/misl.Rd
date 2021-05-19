@@ -13,8 +13,9 @@ misl(
   bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
   cat_method = c("Lrnr_mean"),
   ignore_predictors = NA,
-  missing_default = "sample",
-  quiet = TRUE
+  quiet = TRUE,
+  delta_con = 0,
+  delta_cat = 1
 )
 }
 \arguments{
@@ -34,9 +35,11 @@ misl(
 
 \item{ignore_predictors}{A vector of strings to be supplied for ignoring in the prediction of other variables. The default is \code{ignore_predictors = NA}}
 
-\item{missing_default}{A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.}
-
 \item{quiet}{A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.}
+
+\item{delta_con}{An integer to specify by how much continuous values should be shifted for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_con = 0}.}
+
+\item{delta_cat}{An integer to specify by how much binary/categorical values should be scaled for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_cat = 1}.}
 }
 \value{
 A list of \code{m} full tibbles.
@@ -45,7 +48,12 @@ A list of \code{m} full tibbles.
 Imputes missing values using multiple imputation by super learning
 }
 \examples{
-# This will generate imputations for the built-in nhanes dataset.
-misl_imp <- misl(nhanes, m = 1)
+# This will generate imputations for the built-in abalone dataset.
+misl_imp <- misl(abalone,
+m = 1,
+abalone, maxit = 5, m = 5, quiet = TRUE,
+con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
 
 }

@@ -15,3 +15,10 @@ plot(imputations)
 \description{
 Creates a traceplot using the imputations from MISL
 }
+\examples{
+# First generate the imputations
+misl_imp <- misl(nhanes, m = 1)
+
+# Then you can view the traceplot
+plot(misl_imp)
+}
