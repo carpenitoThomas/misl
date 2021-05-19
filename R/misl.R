@@ -8,8 +8,9 @@
 #' @param bin_method A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.
 #' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
 #' @param ignore_predictors A vector of strings to be supplied for ignoring in the prediction of other variables. The default is \code{ignore_predictors = NA}
-#' @param missing_default A string defining how placeholder values should be imputed with the misl algorithm. Allows for one of the following: \code{c("mean", "median")}. The default is \code{missing_default = "mean"}.
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
+#' @param delta_con An integer to specify by how much continuous values should be shifted for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_con = 0}.
+#' @param delta_cat An integer to specify by how much binary/categorical values should be scaled for the delta adjustmenet method of a sensitivity analysis. If the user does not specify a value, the imputations will not be augmented. The default is \code{delta_cat = 1}.
 #'
 #' @return A list of \code{m} full tibbles.
 #' @export
@@ -31,8 +32,9 @@ misl <- function(dataset,
                  bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                  cat_method = c("Lrnr_mean"),
                  ignore_predictors = NA,
-                 missing_default = "sample",
-                 quiet = TRUE
+                 quiet = TRUE,
+                 delta_con = 0,
+                 delta_cat = 1
                  ){
 
   # TODO: Builds out more checks to ensure the MISL algorithm can run properly
@@ -179,11 +181,19 @@ misl <- function(dataset,
           # Imputation for binary variables can be found from the following resources:
           # https://stefvanbuuren.name/fimd/sec-categorical.html#def:binary
           # https://github.com/cran/mice/blob/master/R/mice.impute.logreg.R
+
           uniform_values <- runif(length(predictions_boot_dot))
-          predicted_values <- as.integer(uniform_values <= predictions_boot_dot)
+
+          # Here we add a bit of code for sensitivity analyses
+          # Delta_cat will default be 1 so this won't change predictions
+          predicted_values <- as.integer(uniform_values <= (predictions_boot_dot / delta_cat))
 
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
         }else if(outcome_type == "continuous"){
+          # We can add a bit of augemntation here for the sensitivity analysis
+          # By default, this should not affect results as we will be adding 0, otherwise, augment the imputations
+          predictions_boot_dot <- predictions_boot_dot + delta_con
+
           # If continuous, we can do matching
           # Find the 5 closest donors and making a random draw from them - there are a lot of ways to do matching
           # https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
@@ -199,6 +209,14 @@ misl <- function(dataset,
           # https://github.com/cran/mice/blob/master/R/mice.impute.polyreg.R
           uniform_values <- rep(runif(length(predictions_boot_dot)), each = length(levels(dataset[[column]])))
           post <- sl3::unpack_predictions(predictions_boot_dot)
+          # We need to add a bit of code in here that allows for the delta adjustment method for sensitivity analyses
+          # The idea will be to choose a random column, scale it by the delta amount, and re-normalize to 1
+          # Since the default scale parameter is 1, this shouldn't change predictions
+          sampled_delta_col <- sample(ncol(post),1)
+          post[, sampled_delta_col] <- post[, sampled_delta_col] / delta_cat
+          post <- t(scale(t(post), center = FALSE, scale = colSums(t(post))))
+
+          # We can then continue with imputation as normal
           draws <- uniform_values > apply(post, 1, cumsum)
           idx <- 1 + apply(draws, 2, sum)
           predicted_values <- levels(dataset[[column]])[idx]
