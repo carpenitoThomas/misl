@@ -234,8 +234,11 @@ misl <- function(dataset,
           # The idea will be to choose a random column, scale it by the delta amount, and re-normalize to 1
           # Since the default scale parameter is 1, this shouldn't change predictions
           if(delta_adj){
-            sampled_delta_col <- sample(ncol(post),1)
-            post[, sampled_delta_col] <- post[, sampled_delta_col] / delta_cat
+            sampled_delta_col <- max.col(post)
+            for(row_num in seq_along(1:nrow(post))){
+              post[row_num, sampled_delta_col[row_num]] <- post[row_num, sampled_delta_col[row_num]] / delta_cat
+            }
+
             post <- t(scale(t(post), center = FALSE, scale = colSums(t(post))))
           }else{
             sampled_delta_col <- sample(ncol(post),1)
