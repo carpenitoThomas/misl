@@ -2,5 +2,6 @@
 
 export("%>%")
 export(misl)
+export(misl_mnar)
 export(plot)
 importFrom(magrittr,"%>%")

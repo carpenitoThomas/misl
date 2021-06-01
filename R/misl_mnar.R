@@ -1,4 +1,4 @@
-#' Imputes missing values under the assumption of Missing Not At Random (MNAR)
+#' Imputes missing values using multiple imputation by super learning under the assumption of Missing Not At Random (MNAR)
 #'
 #' @param dataset A dataframe or matrix containing the incomplete data. Missing values are represented with \code{NA}.
 #' @param m The number of multiply imputed datasets to create. The default is \code{m=5}.
@@ -18,14 +18,17 @@
 #'
 #' @examples
 #' # This will generate imputations for the built-in abalone dataset.
-#' misl_imp <- misl(abalone,
+#' misl_imp <- misl_mnar(abalone,
 #' m = 1,
 #' abalone, maxit = 5, m = 5, quiet = TRUE,
 #' con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
 #' bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
-#' cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
+#' cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"),
+#' delta_cat = 3,
+#' delta_var = "Length"
+#' )
 #'
-misl <- function(dataset,
+misl_mnar <- function(dataset,
                  m = 5,
                  maxit = 5,
                  seed = NA,
