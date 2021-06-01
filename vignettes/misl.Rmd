@@ -14,17 +14,18 @@ knitr::opts_chunk$set(
 )
 ```
 
-Multiple Imputation by Super Learning (misl) is a highly customizable novel technique for (appropriately) handling missingness in a dataset. The following vignette will detail the workflow one may adopt when carrying out an analysis and how one can use the `misl` package.
+Multiple Imputation by Super Learning (misl) is a highly customizable novel technique for handling missingness in a dataset. The following vignette will detail the workflow one may adopt when carrying out an analysis and how one can use the `misl` package.
 
 # Data Import and Setup
 
-The initial setup for this analysis involves loading the `misl` and `tidyverse` packages required for this analysis.
+The initial setup for this analysis involves loading the `misl`, `tidyverse`, `mice`, and `sl3` packages required for this analysis.
 
 ```{r, echo= TRUE, message=FALSE}
 library(misl)
 library(tidyverse)
 library(mice)
 library(sl3)
+set.seed(12345)
 ```
 
 For this particular analysis we will using a subset of the NHANES (2009 - 2012) data made available from the NHANES package itlsef.
@@ -53,12 +54,11 @@ mice::md.pattern(nhanes, rotate.names = TRUE)
 
 In total, there are `r nrow(nhanes)` observations in our dataset. This means that we have 4,337 complete observations, or approximately `r (4337 / nrow(nhanes)) * 100`% of our data is complete. At this point it may be tempting to do a complete case analysis BUT that would not be advisable - this package hopes to make multiple imputation an easy pitstop on the way to inference.
 
-
 # Question of Interest / Modeling
 
-As with any analysis, before we begin we should (ideally) come up a question of interest. For this particular dataset, I am going to say that we are interested in obtaining inference on the relationship between an individual's: Age, Weight, Height, Smoking Status, and Education and their Cholesterol levels. More explicitly, we are interested in the following linear model:
+As with any analysis, before we begin we should come up a question of interest. For this particular dataset, I am going to say that we are interested in obtaining inference on the relationship between an individual's: Age, Weight, Height, Smoking Status, and Education and their Cholesterol levels. More explicitly, we are interested in the following linear model:
 
-$$\text{TotChol} = \beta_0 + \beta_1 \times Age + \beta_2 \times Weight + \beta_3 \times Height + \beta_4 \times Smoke100 + \beta_5 \times Education + \epsilon$$
+$$TotChol = \beta_0 + \beta_1 \times Age + \beta_2 \times Weight + \beta_3 \times Height + \beta_4 \times Smoke100 + \beta_5 \times Education + \epsilon$$
 
 
 # Analysis
@@ -67,7 +67,7 @@ In order for us to carry out the multiple imputation, we need to specify a few o
 
 __m__: The number of datasets to impute. The default is 5.
 
-__maxit__: How many iterations would you like to have completed before the aglorithm is to have (assumed) convergence? The default here is 5.
+__maxit__: How many iterations would you like to have completed before convergence? The default here is 5.
 
 __con_method__: This parameter allows us to select which learners we would like to include for when imputing our continuous variables. To make this choice, we must think carefully about which models (both parametric and non-parametric) we would like to consider. A list of available choices can be viewed using the `sl3` package function as follows:
 
@@ -87,24 +87,78 @@ __cat_method__: This parameter allows us to select which learners we would like 
 sl3::sl3_list_learners("categorical")
 ```
 
-__missing_default__: This parameter tells our algorithm how to input missing values for super learning. In reality, altering this parameter will have little to no effect on final predictions. The default imputation placeholder is set to mean imputation.
-
 Next, we are finally ready to begin building our imputation model:
 
 ```{r}
-a_misl_imputations <- misl(dataset = nhanes,
-                         m = 1, 
+misl_imputations <- misl(dataset = nhanes,
+                         m = 5, 
                          maxit = 5,
-                         con_method = c("Lrnr_mean", "Lrnr_glm", "Lrnr_gam", "Lrnr_svm", "Lrnr_ranger"),
-                         bin_method = c("Lrnr_mean", "Lrnr_glm", "Lrnr_earth"),
-                         cat_method = c("Lrnr_mean", "Lrnr_glmnet"),
+                         con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth"),
+                         bin_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_ranger"),
+                         cat_method = c("Lrnr_mean", "Lrnr_independent_binomial"),
                          quiet = TRUE
                          )
 ```
 
-For this analysis we decided to choose the following learners for our continuous variables: mean, glm, gam, svm, and ranger.
+For this analysis we decided to choose the following learners:
 
-For our categorical variable: mean and glmnet
+continuous variables: mean, glm, and regression splines
 
-And for our binary variable: mean, glm, and earth.
+binary variable: mean, glm, and random forest
+
+categorical variable: mean and a series of independent binomial regressions
+
+Once the algorithm has finished, we can view a trace plot to verify convergence:
+
+```{r}
+plot(misl_imputations)
+```
+
+We can see evidence of convergence... 
+
+Next, we can obtain inference to answer or research question of interest. To do this we run our analysis independently across all $m$ datasets and then pool the results. The analysis results in the following:
+
+$$TotChol = \beta_0 + \beta_1 \times Age + \beta_2 \times Weight + \beta_3 \times Height + \beta_4 \times Smoke100 + \beta_5 \times Education + \epsilon$$
+```{r}
+misl_modeling <- lapply(misl_imputations, function(y){
+  stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y$datasets)
+})
+
+summary(mice::pool(misl_modeling), conf.int = TRUE)
+```
+
+We can interpret our results as follows:
+
+
+# Sensivitiy Analysis
+
+With our completed analysis, we can begin to evaluate the robustness of our imputations. That is, check to see how sensitive our imputations are to other missingness mechanisms. To do this, we will generate imputations under the assumption that data are missing not at random (MNAR), and will use the delta-adjustment method to augment imputations post prediction. For instance, we could adjust the "Age" covariate so that after each imputation, we subtract 5 years from each imputed value. This would simulate a missingness mechanism where imputations are generated that are not accounted for by the data.
+
+For our example, since most missing data are present for the "Smoke100" variable, we will simulate MNAR missingness for this variable using the delta adjustment method but by changing the odds of smoking (post imputation) with a number of different values. To do this, we can use the following code:
+
+```{r}
+misl_imputations_mnar_1 <- misl_mnar(dataset = nhanes,
+                         m = 5, 
+                         maxit = 5,
+                         con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth"),
+                         bin_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_ranger"),
+                         cat_method = c("Lrnr_mean", "Lrnr_independent_binomial"),
+                         quiet = TRUE,
+                         delta_var = "Smoke100",
+                         delta_cat = 2
+                         )
+```
+
+Now, if the data are not sensitive to this missingness mechanism then we should see very little changes between our newly pooled regression coefficients and that from the previous analysis. The results are as follows:
+
+```{r}
+misl_modeling_mnar <- lapply(misl_imputations_mnar_1, function(y){
+  stats::lm(TotChol ~ Age + Weight + Height + Smoke100 + Education, data = y$datasets)
+})
+
+summary(mice::pool(misl_modeling_mnar), conf.int = TRUE)
+```
+
+
+
 
