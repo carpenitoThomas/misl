@@ -6,9 +6,9 @@
 #' @param m The number of multiply imputed datasets to create. The default is \code{m=5}.
 #' @param maxit The number of iterations for each of the \code{m} imputed datasets. The default is \code{maxit=5}.
 #' @param seed Specify whether or not to include a seed for reproducible research. The default is \code{seed = NA}.
-#' @param con_method A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}.
-#' @param bin_method A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.
-#' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.
+#' @param con_method A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}. To view all available learners, execute \code{list_learners("continuous")}
+#' @param bin_method A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}. To view all available learners, execute \code{list_learners("binomial")}
+#' @param cat_method A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}. To view all available learners, execute \code{list_learners("categorical")}
 #' @param ignore_predictors A vector of strings to be supplied for ignoring in the prediction of other variables. The default is \code{ignore_predictors = NA}
 #' @param quiet A boolean describing if progress of the misl algorithm should be printed to the console. The default is \code{quiet = TRUE}.
 #' @return A list of \code{m} full tibbles.

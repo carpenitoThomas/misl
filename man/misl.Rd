@@ -25,11 +25,11 @@ misl(
 
 \item{seed}{Specify whether or not to include a seed for reproducible research. The default is \code{seed = NA}.}
 
-\item{con_method}{A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}.}
+\item{con_method}{A vector of strings to be supplied for building the super learner for columns containing continuous data. The default learners are \code{con_method = c("Lrnr_mean", "Lrnr_glm")}. To view all available learners, execute \code{list_learners("continuous")}}
 
-\item{bin_method}{A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}.}
+\item{bin_method}{A vector of strings to be supplied for building the super learner for columns containing binomial data. Important to note that these values must only take on values \code{c(0,1,NA)}. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glm")}. To view all available learners, execute \code{list_learners("binomial")}}
 
-\item{cat_method}{A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}.}
+\item{cat_method}{A vector of strings to be supplied for building the super learner for columns containing categorical data. The default learners are \code{bin_method = c("Lrnr_mean", "Lrnr_glmnet")}. To view all available learners, execute \code{list_learners("categorical")}}
 
 \item{ignore_predictors}{A vector of strings to be supplied for ignoring in the prediction of other variables. The default is \code{ignore_predictors = NA}}
 
