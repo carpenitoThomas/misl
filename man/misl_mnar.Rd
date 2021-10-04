@@ -2,7 +2,7 @@
 % Please edit documentation in R/misl_mnar.R
 \name{misl_mnar}
 \alias{misl_mnar}
-\title{Imputes missing values under the assumption of Missing Not At Random}
+\title{Imputes missing values using multiple imputation by super learning under the assumption of Missing Not At Random (MNAR)}
 \usage{
 misl_mnar(
   dataset,
@@ -48,15 +48,18 @@ misl_mnar(
 A list of \code{m} full tibbles.
 }
 \description{
-Imputes missing values under the assumption of Missing Not At Random
+Imputes missing values using multiple imputation by super learning under the assumption of Missing Not At Random (MNAR)
 }
 \examples{
 # This will generate imputations for the built-in abalone dataset.
-misl_imp <- misl(abalone,
+misl_imp <- misl_mnar(abalone,
 m = 1,
 abalone, maxit = 5, m = 5, quiet = TRUE,
 con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
 bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
-cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
+cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"),
+delta_cat = 3,
+delta_var = "Length"
+)
 
 }
