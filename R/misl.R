@@ -190,13 +190,14 @@ misl <- function(dataset,
           # If continuous, we can do matching
           # Find the 5 closest donors and making a random draw from them - there are a lot of ways to do matching
           # https://stefvanbuuren.name/fimd/sec-pmm.html#sec:pmmcomputation
-          # Note, there are considerable slow-downs with our matching here and should be improved for efficiency
+          # This matching was updated on 10/4 to help with speedup (15% reduction in time). We only match on missing values.
           list_of_matches <- c()
-          for(value in seq_along(predictions_boot_dot)){
-            distance <- head(order(abs(predictions_boot_dot[value] - ifelse(is.na(dataset[[column]]), NA, predictions_full_hat))),5)
-            list_of_matches[value] <- ifelse(is.na(dataset[[column]]), NA, dataset[[column]])[sample(distance,1)]
+          non_na_predictions <- predictions_boot_dot[is.na(dataset[[column]])]
+          for(value in seq_along(non_na_predictions)){
+            distance <- head(order(abs(non_na_predictions[value] - predictions_full_hat[!is.na(dataset[[column]])])), 5)
+            list_of_matches[value] <- dataset[[column]][!is.na(dataset[[column]])][sample(distance,1)]
           }
-          dataset_master_copy[[column]]<- ifelse(is.na(dataset[[column]]), list_of_matches, dataset[[column]])
+          dataset_master_copy[[column]][is.na(dataset[[column]])] <- list_of_matches
         }else if(outcome_type== "categorical"){
           # For categorical data we follow advice suggested by Van Buuren:
           # https://github.com/cran/mice/blob/master/R/mice.impute.polyreg.R
