@@ -1,4 +1,6 @@
-#' Imputes missing values using multiple imputation by super learning
+#' MISL: Multiple Imputation by Super Learning
+#'
+#' Imputes missing values using multiple imputation by super learning (under review).
 #'
 #' @param dataset A dataframe or matrix containing the incomplete data. Missing values are represented with \code{NA}.
 #' @param m The number of multiply imputed datasets to create. The default is \code{m=5}.
@@ -15,11 +17,12 @@
 #' @examples
 #' # This will generate imputations for the built-in abalone dataset.
 #' misl_imp <- misl(abalone,
-#' m = 1,
-#' abalone, maxit = 5, m = 5, quiet = TRUE,
-#' con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
-#' bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
-#' cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
+#'     maxit = 5,
+#'     m = 5,
+#'     con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+#'     bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+#'     cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger")
+#' )
 #'
 misl <- function(dataset,
                  m = 5,

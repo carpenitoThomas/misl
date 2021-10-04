@@ -2,7 +2,7 @@
 % Please edit documentation in R/misl.R
 \name{misl}
 \alias{misl}
-\title{Imputes missing values using multiple imputation by super learning}
+\title{MISL: Multiple Imputation by Super Learning}
 \usage{
 misl(
   dataset,
@@ -39,15 +39,16 @@ misl(
 A list of \code{m} full tibbles.
 }
 \description{
-Imputes missing values using multiple imputation by super learning
+Imputes missing values using multiple imputation by super learning (under review).
 }
 \examples{
 # This will generate imputations for the built-in abalone dataset.
 misl_imp <- misl(abalone,
-m = 1,
-abalone, maxit = 5, m = 5, quiet = TRUE,
-con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
-bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
-cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
+    maxit = 5,
+    m = 5,
+    con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+    bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+    cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger")
+)
 
 }
