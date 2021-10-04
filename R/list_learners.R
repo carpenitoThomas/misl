@@ -12,5 +12,5 @@
 #'
 list_learners <- function(datatype){
 
-  sl3::sl3_list_learners(...)
+  sl3::sl3_list_learners(datatype)
 }
