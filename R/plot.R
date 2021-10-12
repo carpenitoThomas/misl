@@ -1,4 +1,6 @@
-#' Creates a traceplot using the imputations from MISL
+#' Plot the trace lines of the MISL algorithm
+#'
+#' Creates a traceplot using the imputations from MISL to view convergence. Of importance, these plots to not display categorical variables (yet).
 #'
 #' @param imputations Results of the MISL imputations
 #'
@@ -9,13 +11,16 @@
 #' # First generate the imputations
 #' misl_imp <- misl(nhanes, m = 1)
 #'
-#' # Then you can view the traceplot
+#' # Then you can generate the associated traceplot to investiga
 #' plot(misl_imp)
 plot <- function(imputations){
   long_dataframe <- data.frame()
   for(mdatasets in imputations){
     long_dataframe <- rbind(long_dataframe, mdatasets$trace)
   }
+
+  long_dataframe <- long_dataframe %>%
+    filter(complete.cases(.))
 
   num_pages <- ceiling(length(unique(long_dataframe$variable)) / 3)
 
