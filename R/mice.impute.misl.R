@@ -18,7 +18,9 @@
 #' ry <- !is.na(y)
 #'
 #' yimp <- mice.impute.misl(y, ry, x)
-#' @export#'
+#'
+#'  # This method can also be incorporated into the default mice method as well
+#'  mice(boys, method = c("misl"))
 #' @export
 mice.impute.misl <- function(y, ry, x, wy = NULL,
                              con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
@@ -31,14 +33,17 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
   yobs <- y[ry]
   xobsyobs <- cbind(xobs,yobs)
   dataset_copy <- cbind(x, yobs = y)
+  dataset_copy <- as.data.frame(dataset_copy)
+
 
   # Avoiding complications with variance estimates of the ensemble by using bootstrapping
   bootstrap_sample <- dplyr::sample_n(xobsyobs, size = nrow(xobs), replace = TRUE)
 
   # Checking the datatype for the super learner
-  outcome_type <- check_datatype(yobs_boot)
+  outcome_type <- check_datatype(yobs)
 
   xvars <- colnames(xobs)
+  colnames(dataset_copy) <- c(xvars, "yobs" )
 
   # First, define the task using our bootstrap_sample (this helps with variability in imputations) and our full_dataframe sample
   sl3_task_boot_dot <- sl3::make_sl3_Task(bootstrap_sample, covariates = xvars, outcome = "yobs", outcome_type = outcome_type )
@@ -82,6 +87,7 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
   # Original PMM uses type 1 matching, so that's what we are going to use
 
   predictions_task_boot_dot <- sl3::sl3_Task$new(dataset_copy, covariates = xvars, outcome = "yobs", outcome_type = outcome_type )
+
   predictions_boot_dot <- sl_stack_fit_boot_dot$predict(predictions_task_boot_dot)
 
   if(outcome_type == "continuous"){
@@ -130,20 +136,3 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
 
   }
 }
-
-
-
-set.seed(53177)
-xname <- c("age", "hgt", "wgt")
-r <- stats::complete.cases(boys[, xname])
-x <- boys[r, xname]
-y <- boys[r, "tv"]
-ry <- !is.na(y)
-table(ry)
-
-yimp_pmm <- mice.impute.pmm(y, ry, x)
-yimp_misl <- mice.impute.misl(y, ry, x)
-
-
-
-
