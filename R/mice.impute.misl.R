@@ -59,6 +59,7 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
   # to deal with the different factor levels. Should this happen, we will print a message to the user letting them know that the machine learning algorithms could NOT be used
   # in this instance and instead for this iteration they must rely on the mean and a series of independent binomial samples. This will be updated should more learners become available.
   if(outcome_type == "categorical"){
+    fy <- as.factor(y)
     re_assign_cat_learners <- FALSE
     for(column_number in seq_along(bootstrap_sample)){
       if(is.factor(bootstrap_sample[[column_number]])){
@@ -124,7 +125,7 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
     uniform_values <- runif(length(predictions_boot_dot))
     predicted_values <- as.integer(uniform_values <= predictions_boot_dot)
 
-    dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
+    predicted_values[!ry]
   }else if(outcome_type == "continuous"){
     predictions_boot_dot <- predictions_boot_dot
 
@@ -142,32 +143,13 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
   }else if(outcome_type== "categorical"){
     # For categorical data we follow advice suggested by Van Buuren:
     # https://github.com/cran/mice/blob/master/R/mice.impute.polyreg.R
-    uniform_values <- rep(runif(length(predictions_boot_dot)), each = length(levels(y[ry])))
+    uniform_values <- rep(runif(length(predictions_boot_dot)), each = length(levels(fy)))
     post <- sl3::unpack_predictions(predictions_boot_dot)
     draws <- uniform_values > apply(post, 1, cumsum)
     idx <- 1 + apply(draws, 2, sum)
-    predicted_values <- levels(y[ry])[idx]
+    predicted_values <- levels(fy)[idx]
 
-    factor(predicted_values, levels = levels(y[ry]))
+    factor(predicted_values[!ry], levels = levels(fy))
 
   }
 }
-
-
-xname <- c("age", "hgt", "wgt")
-r <- stats::complete.cases(boys[, xname])
-x <- boys[r, xname]
-y <- boys[r, "gen"]
-ry <- !is.na(y)
-
-yimp <- mice.impute.misl(y, ry, x)
-
-# Compare the two
-
-set.seed(1234)
-mice_misl <- mice(boys, method = c("misl"), maxit = 2, m = 2)
-set.seed(1234)
-misl <- misl(boys, maxit = 2, m = 2, quiet = FALSE,
-             con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
-             bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
-             cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
