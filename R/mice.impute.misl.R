@@ -35,7 +35,6 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
   dataset_copy <- cbind(x, yobs = y)
   dataset_copy <- as.data.frame(dataset_copy)
 
-
   # Avoiding complications with variance estimates of the ensemble by using bootstrapping
   bootstrap_sample <- dplyr::sample_n(xobsyobs, size = nrow(xobs), replace = TRUE)
 
@@ -55,7 +54,24 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
                      binomial = bin_method ,
                      continuous = con_method)
 
-  ## Error message about categorical variables should go here
+  # If after drawing a bootstrap sample, any of the columns DO NOT contain the same factors as in the original data, then the algorithm will fail
+  # This is set up by design becuase the super learner cannot make out of sample predictions and the meta-learner will not know how
+  # to deal with the different factor levels. Should this happen, we will print a message to the user letting them know that the machine learning algorithms could NOT be used
+  # in this instance and instead for this iteration they must rely on the mean and a series of independent binomial samples. This will be updated should more learners become available.
+  if(outcome_type == "categorical"){
+    re_assign_cat_learners <- FALSE
+    for(column_number in seq_along(bootstrap_sample)){
+      if(is.factor(bootstrap_sample[[column_number]])){
+        if(length(levels(droplevels(bootstrap_sample)[[column_number]])) != length(levels(bootstrap_sample[[column_number]]))){
+          re_assign_cat_learners <- TRUE
+        }
+      }
+    }
+    if(re_assign_cat_learners){
+      warning("Factor levels are not compatible between bootstrap and original dataframes. This occurs as a product of bootstrap sampling. Lrnr_mean and Lrnr_independent_binomial have been subsituted for this iteration.")
+      learners <- c("Lrnr_mean", "Lrnr_independent_binomial")
+    }
+  }
 
   # Next, iterate through each of the supplied learners to build the SL3 learner list
   learner_list <- c()
@@ -126,13 +142,32 @@ mice.impute.misl <- function(y, ry, x, wy = NULL,
   }else if(outcome_type== "categorical"){
     # For categorical data we follow advice suggested by Van Buuren:
     # https://github.com/cran/mice/blob/master/R/mice.impute.polyreg.R
-    uniform_values <- rep(runif(length(predictions_boot_dot)), each = length(levels(dataset[[column]])))
+    uniform_values <- rep(runif(length(predictions_boot_dot)), each = length(levels(y[ry])))
     post <- sl3::unpack_predictions(predictions_boot_dot)
     draws <- uniform_values > apply(post, 1, cumsum)
     idx <- 1 + apply(draws, 2, sum)
-    predicted_values <- levels(dataset[[column]])[idx]
+    predicted_values <- levels(y[ry])[idx]
 
-    dataset_master_copy[[column]] <-  factor(ifelse(is.na(dataset[[column]]), predicted_values, as.character(dataset[[column]])), levels = levels(dataset[[column]]))
+    factor(predicted_values, levels = levels(y[ry]))
 
   }
 }
+
+
+xname <- c("age", "hgt", "wgt")
+r <- stats::complete.cases(boys[, xname])
+x <- boys[r, xname]
+y <- boys[r, "gen"]
+ry <- !is.na(y)
+
+yimp <- mice.impute.misl(y, ry, x)
+
+# Compare the two
+
+set.seed(1234)
+mice_misl <- mice(boys, method = c("misl"), maxit = 2, m = 2)
+set.seed(1234)
+misl <- misl(boys, maxit = 2, m = 2, quiet = FALSE,
+             con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+             bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+             cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))

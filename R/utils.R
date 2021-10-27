@@ -7,7 +7,7 @@ check_dataset <- function(dataset){
 
 check_datatype <- function(x){
   datatype <- class(x)
-  if(class(x) == "factor"){
+  if(is.factor(x)){
     return("categorical")
   }
   else{
