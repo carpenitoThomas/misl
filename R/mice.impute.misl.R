@@ -1,6 +1,6 @@
 #' Imputation by MISL
 #'
-#' The purpose of this file is to write the MISL function as if it were being implemented in the MICE package.
+#' The purpose of this file is to write the MISL function as if it were being implemented in the MICE package. Of importance, this method can be used for all data types with the exception of ordered factors (this algorithm returns the ordered factors as unordered).
 #'
 #' @aliases mice.impute.misl misl
 #'
