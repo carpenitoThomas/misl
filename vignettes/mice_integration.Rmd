@@ -14,6 +14,11 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+MISL was developed with the intention of being integrated into the existing MICE package. As MISL is an apropriate method to use when data are binary, continuous, or categorical, one may use the MISL algorithm alongside other methods present in the MICE package. This vignette shows a short example of how such a task can be accomplished.
+
+# Setup
+
 ```{r setup}
 library(misl)
 ```
