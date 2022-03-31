@@ -14,6 +14,89 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+# Running Code in Paralell
+
+MISL is an ensemble methodology that relies heavily on cross-validation. As such, iterations of the MISL algorithm can be computationally intensive and time expensive. Luckily, this package supports parallel processing with the `future` package.
+
+There are a few options one can consider with paralell processing: one can choose to parallelize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):
+
+```{r, echo = TRUE, eval= FALSE}
 library(misl)
+library(future)
+
+# Sequential dataset processessing, Sequential super learning  (default)
+plan(list(sequential,sequential))
+seq_seq <- misl(abalone)
+
+# Sequential dataset processessing, parallel super learning (8) 
+plan(list(sequential,tweak(multisession, workers = 8)))
+seq_par <- misl(abalone)
+
+# Parallel dataset processessing (8), sequential super learning 
+plan(list(tweak(multisession, workers = 5), sequential))
+par_seq <- misl(abalone)
+
+# Parallel dataset processessing (4), parallel super learning (2) 
+plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
+par_par <- misl(abalone)
+
+# Parallel dataset processing to ensure you don't overload your computer
+plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
+par_safe <- misl(abalone)
+
 ```
+
+# Time Comparison
+
+The following set of code displays how computation times can change when using differing paralell processes. Using the code above, we will compare the computation across the various testing procedures:
+
+```{r, echo = TRUE, eval = TRUE}
+library(misl)
+library(future)
+
+#1. Sequential dataset processessing, Sequential super learning  (default)
+seq_seq <- system.time({
+  plan(list(sequential,sequential))
+  misl(abalone)  
+})
+
+print(paste0("1: ", seq_seq))
+
+#2.  Sequential dataset processessing, parallel super learning (8) 
+seq_par <- system.time({
+  plan(list(sequential,tweak(multisession, workers = 8)))
+  misl(abalone)
+})
+
+print(paste0("2: ", seq_par))
+
+#3.  Parallel dataset processessing (8), sequential super learning 
+par_seq <- system.time({
+  plan(list(tweak(multisession, workers = 5), sequential))
+  misl(abalone)
+})
+
+print(paste0("3: ", par_seq))
+
+#4.  Parallel dataset processessing (4), parallel super learning (2) 
+par_par <- system.time({
+  plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
+  misl(abalone)
+})
+
+print(paste0("4: ", par_par))
+
+#5.  Parallel dataset processing to ensure you don't overload your computer
+par_safe <- system.time({
+  plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
+  misl(abalone)
+})
+
+print(paste0("5: ", par_safe))
+```
+
+Results will depend on your server / computer's capacity (though, we can see how differences exist in timing when comparing methods).
+
+# Caveat
+
+Reminder, parallel code is not a silver bullet to automate making runtime processes faster. Make sure you have an understanding of the capacity of your computer. Further information about the topology of running code in parallel can be found in the future package.

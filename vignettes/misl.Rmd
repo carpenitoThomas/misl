@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-Multiple Imputation by Super Learning (misl) is a highly customizable novel technique for handling missingness in a dataset. The following vignette will detail the workflow one may adopt when carrying out an analysis and how one can use the `misl` package.
+Multiple Imputation by Super Learning (misl) is a highly custom novel technique for handling missingness in a dataset. The following vignette will detail the workflow one may adopt when carrying out an analysis and how one can use the `misl` package.
 
 # Data Import and Setup
 
@@ -28,7 +28,7 @@ library(sl3)
 set.seed(12345)
 ```
 
-For this particular analysis we will using a subset of the NHANES (2009 - 2012) data made available from the NHANES package itlsef.
+For this particular analysis we will using a subset of the NHANES (2009 - 2012) data made available from the NHANES package itself.
 
 ```{r}
 nhanes <- misl::nhanes
@@ -52,7 +52,7 @@ Actually, the `mice` package has a really nice function to view the amount of mi
 mice::md.pattern(nhanes, rotate.names = TRUE)
 ```
 
-In total, there are `r nrow(nhanes)` observations in our dataset. This means that we have 4,337 complete observations, or approximately `r (4337 / nrow(nhanes)) * 100`% of our data is complete. At this point it may be tempting to do a complete case analysis BUT that would not be advisable - this package hopes to make multiple imputation an easy pitstop on the way to inference.
+In total, there are `r nrow(nhanes)` observations in our dataset. This means that we have 4,337 complete observations, or approximately `r (4337 / nrow(nhanes)) * 100`% of our data is complete. At this point it may be tempting to do a complete case analysis BUT that would not be advisable - this package hopes to make multiple imputation an easy pit stop on the way to inference.
 
 # Question of Interest / Modeling
 
@@ -129,7 +129,7 @@ summary(mice::pool(misl_modeling), conf.int = TRUE)
 Our results indicate the following variables to be statistically significant:
 
 
-# Sensivitiy Analysis
+# Sensitivity Analysis
 
 With our completed analysis, we can begin to evaluate the robustness of our imputations. That is, check to see how sensitive our imputations are to other missingness mechanisms. To do this, we will generate imputations under the assumption that data are missing not at random (MNAR), and will use the delta-adjustment method to augment imputations post prediction. For instance, we could adjust the "Age" covariate so that after each imputation, we subtract 5 years from each imputed value. This would simulate a missingness mechanism where imputations are generated that are not accounted for by the data.
 

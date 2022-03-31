@@ -27,8 +27,8 @@ This method has been submitted for publication and is currently in review.
 
 The MISL algorithm is not yet available on CRAN; instead, please use the development version available here on Github. To download the development version use:
 
-``` r
-# install.packages("devtools")
+```{r, eval = FALSE}
+install.packages("devtools")
 devtools::install_github("carpenitoThomas/misl")
 ```
 ## Example
@@ -40,9 +40,9 @@ library(misl)
 set.seed(123)
 
 misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = TRUE,
-                  con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
-                  bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
-                  cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
+                  con_method = c("Lrnr_glm_fast", "Lrnr_mean"),
+                  bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
+                  cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(Whole_Weight ~ Sex + Length + Diameter + Height + Older_12, data = y$datasets)
@@ -54,34 +54,6 @@ summary(mice::pool(misl_modeling), conf.int = TRUE)
 We can also look at the traceplot of the imputations as well:
 
 ```{r}
-misl::plot(misl_imp)
+#misl::plot(misl_imp)
 ```
 
-This package also supports parallel processing with the `future` package. One can choose to parallelize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):
-
-```{r, echo = TRUE, eval= FALSE}
-library(future)
-
-# Sequential dataset processessing, Sequential super learning  (default)
-plan(list(sequential,sequential))
-seq_seq <- misl(abalone)
-
-# Sequential dataset processessing, parallel super learning (8) 
-plan(list(sequential,tweak(multisession, workers = 8)))
-seq_par <- misl(abalone)
-
-# Parallel dataset processessing (8), sequential super learning 
-plan(list(tweak(multisession, workers = 5), sequential))
-par_seq <- misl(abalone)
-
-# Parallel dataset processessing (4), parallel super learning (2) 
-plan(list(tweak(multisession, workers = 4),tweak(multisession, workers = 2)))
-par_par <- misl(abalone)
-
-# Parallel dataset processing to ensure you don't overload your computer
-plan(list(tweak(multisession, workers = availableCores() %/% 4),tweak(multisession, workers = 4)))
-par_safe <- misl(abalone)
-
-```
-
-Reminder, parallel code is not a silver bullet to automate making runtime processes faster. Make sure you have an understanding of the capacity of your computer. Further information about the topology of running code in parallel can be found in the future package.

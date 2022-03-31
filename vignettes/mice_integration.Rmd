@@ -15,10 +15,38 @@ knitr::opts_chunk$set(
 ```
 
 
-MISL was developed with the intention of being integrated into the existing MICE package. As MISL is an apropriate method to use when data are binary, continuous, or categorical, one may use the MISL algorithm alongside other methods present in the MICE package. This vignette shows a short example of how such a task can be accomplished.
+MISL was developed with the intention of being integrated into the existing MICE package. As MISL is an appropriate method to use when data are binary, continuous, or categorical, one may use the MISL algorithm alongside other methods present in the MICE package. This vignette shows a short example of how such a task can be accomplished.
 
 # Setup
 
+For this short vignette we are going to use the example given from the MICE package. Say we'd like to use the MISL algorithm to impute BMI, classification and regression trees (CART) for hyp, and predictive mean matching (PMM) for chl. We could do the following: 
+
 ```{r setup}
 library(misl)
+library(mice)
+
+mice_misl_imputations <- mice(mice::nhanes2, meth = c("sample", "misl", "logreg", "norm"))
 ```
+
+Of interest, since the nhanes2 dataframe has four columns, we need to specify four methods. The first column (age) is fully observed and as such, it does not matter which method we supply (sample) as this variable is completely observed. 
+
+Once the imputations are complete, we can continue with our analysis as expected:
+
+```{r}
+mice_misl_fit <- with(data = mice_misl_imputations, exp = lm(bmi ~ hyp + chl))
+summary(pool(mice_misl_fit))
+```
+
+# Caveats
+
+As of current, the MISL code supplied here for MICE only accepts the default characteristics of the MISL package. That is, the learners are set by default:
+
+```{r, eval = FALSE}
+mice.impute.misl <- function(y, ry, x, wy = NULL,
+                             con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+                             bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+                             cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"),
+                             ...) {
+```
+
+To change the default learners, create a separate file and edit the parameters as see fit.
