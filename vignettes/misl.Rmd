@@ -40,7 +40,7 @@ We can look at the first few rows of the nhanes dataset to get a better idea of 
 head(nhanes)
 ```
 
-As we can see there are 6 columns of which 4 are continuous (Age, Weight, Height, and TotChol), 1 is binary  (Smoke100) and 1 is categorical (Education). We can also see from this previous there is a bit of missing data, but what is the percentage of missing information per column:
+As we can see there are 6 columns of which 4 are continuous (Age, Weight, Height, and TotChol), 1 is binary  (Smoke100) and 1 is categorical (Education). We can also see from there is a bit of missing data, but what is the percentage of missing information per column:
 
 ```{r}
 round(colSums(is.na(nhanes)) / nrow(nhanes), 2)
@@ -63,7 +63,7 @@ $$TotChol = \beta_0 + \beta_1 \times Age + \beta_2 \times Weight + \beta_3 \time
 
 # Analysis
 
-In order for us to carry out the multiple imputation, we need to specify a few options in our function.
+In order for us to carry out multiple imputation, we need to specify a few options in our function.
 
 __m__: The number of datasets to impute. The default is 5.
 
@@ -96,27 +96,26 @@ misl_imputations <- misl(dataset = nhanes,
                          con_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_earth"),
                          bin_method = c("Lrnr_mean", "Lrnr_glm_fast", "Lrnr_ranger"),
                          cat_method = c("Lrnr_mean", "Lrnr_independent_binomial"),
-                         quiet = TRUE
-                         )
+                         quiet = TRUE)
 ```
 
 For this analysis we decided to choose the following learners:
 
 continuous variables: mean, glm, and regression splines
 
-binary variable: mean, glm, and random forest
+binary variable: mean, glm, and (a faster implementation of) random forest
 
 categorical variable: mean and a series of independent binomial regressions
 
 Once the algorithm has finished, we can view a trace plot to verify convergence:
 
 ```{r}
-plot(misl_imputations)
+misl::plot(misl_imputations)
 ```
 
 We can see evidence of convergence... 
 
-Next, we can obtain inference to answer or research question of interest. To do this we run our analysis independently across all $m$ datasets and then pool the results. The analysis results in the following:
+Next, we can obtain inference to answer or research question of interest. To do this we run our analysis independently across all $m$ datasets and then pool the results using Rubin's Rules. The analysis results in the following:
 
 $$TotChol = \beta_0 + \beta_1 \times Age + \beta_2 \times Weight + \beta_3 \times Height + \beta_4 \times Smoke100 + \beta_5 \times Education + \epsilon$$
 ```{r}
@@ -127,7 +126,7 @@ misl_modeling <- lapply(misl_imputations, function(y){
 summary(mice::pool(misl_modeling), conf.int = TRUE)
 ```
 
-We can interpret our results as follows:
+Our results indicate the following variables to be statistically significant:
 
 
 # Sensivitiy Analysis

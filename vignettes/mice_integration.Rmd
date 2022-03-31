@@ -1,0 +1,19 @@
+---
+title: "mice_integration"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{mice_integration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(misl)
+```

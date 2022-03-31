@@ -13,10 +13,11 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Multiple Imputation by Super Learning (MISL)
+# misl <a href='/'><img src='misl_hex.png' align="right" height="139" /></a>
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+## Multiple Imputation by Super Learning 
 
 The goal of MISL (Multiple Imputation by Super Learning) is to create multiply imputed datasets using the super learning framework. This package builds heavily off of the `sl3` and `mice` packages.
 
@@ -53,7 +54,7 @@ summary(mice::pool(misl_modeling), conf.int = TRUE)
 We can also look at the traceplot of the imputations as well:
 
 ```{r}
-plot(misl_imp)
+misl::plot(misl_imp)
 ```
 
 This package also supports parallel processing with the `future` package. One can choose to parallelize either the outside creation of datasets or the learners in the super learner library (or both!). The following snippet explains how this can be accomplished with four test-case scenarios (with an assumption that our computer has 8 cores):
