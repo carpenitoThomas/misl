@@ -33,17 +33,9 @@ and then pool the results:
 
 ``` r
 library(misl)
-#> 
-#> Attaching package: 'misl'
-#> The following object is masked from 'package:graphics':
-#> 
-#>     plot
-#> The following object is masked from 'package:base':
-#> 
-#>     plot
 set.seed(123)
 
-misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = TRUE,
+misl_imp <- misl(abalone, maxit = 2, m = 2, quiet = TRUE,
                   con_method = c("Lrnr_glm_fast", "Lrnr_mean"),
                   bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                   cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
@@ -54,25 +46,28 @@ misl_modeling <- lapply(misl_imp, function(y){
 
 summary(mice::pool(misl_modeling), conf.int = TRUE)
 #>          term     estimate   std.error   statistic        df      p.value
-#> 1 (Intercept) -0.947623384 0.027847374 -34.0291823 10.771964 2.597922e-12
-#> 2        SexI -0.045806881 0.010350211  -4.4256955 36.635632 8.312807e-05
-#> 3        SexM -0.001394636 0.007976192  -0.1748498 60.701997 8.617795e-01
-#> 4      Length  1.029861122 0.216725520   4.7519144 15.100531 2.525098e-04
-#> 5    Diameter  2.044891961 0.277137724   7.3786128 14.357777 2.982464e-06
-#> 6      Height  2.846376758 0.231297999  12.3061019  7.201350 4.269258e-06
-#> 7    Older_12  0.068027399 0.012868046   5.2865367  7.349247 9.749150e-04
-#>         2.5 %      97.5 %
-#> 1 -1.00907372 -0.88617305
-#> 2 -0.06678544 -0.02482832
-#> 3 -0.01734560  0.01455633
-#> 4  0.56818932  1.49153292
-#> 5  1.45187724  2.63790668
-#> 6  2.30252871  3.39022481
-#> 7  0.03788999  0.09816481
+#> 1 (Intercept) -0.887693966 0.019116347 -46.4363815 57.552274 0.000000e+00
+#> 2        SexI -0.062548078 0.009443352  -6.6235039 42.294646 4.878313e-08
+#> 3        SexM -0.004023852 0.010026339  -0.4013281  4.032384 7.085381e-01
+#> 4      Length  1.098477222 0.323511367   3.3954826  1.663517 9.867079e-02
+#> 5    Diameter  1.779552767 0.261800553   6.7973606  4.387888 1.738168e-03
+#> 6      Height  2.966731278 0.683115692   4.3429412  1.043598 1.361443e-01
+#> 7    Older_12  0.062752546 0.013503397   4.6471674  1.788729 5.333936e-02
+#>          2.5 %      97.5 %
+#> 1 -0.925965830 -0.84942210
+#> 2 -0.081601601 -0.04349455
+#> 3 -0.031773486  0.02372578
+#> 4 -0.601374698  2.79832914
+#> 5  1.077331080  2.48177446
+#> 6 -4.901370957 10.83483351
+#> 7 -0.002445918  0.12795101
 ```
 
-We can also look at the traceplot of the imputations as well:
+We can also look at the traceplot of the imputations as
+well:
 
 ``` r
-#misl::plot(misl_imp)
+misl::trace_plot(misl_imp)
 ```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-4-2.png" width="100%" />

@@ -20,9 +20,6 @@
 #'   \item{\code{Diameter}}{Perpendicular to length (mm)}
 #'   \item{\code{Height}}{With meat in shell (mm)}
 #'   \item{\code{Whole_Weight}}{Whole abalone (g)}
-#'   \item{\code{Shuck_Weight}}{Weight of meat (g)}
-#'   \item{\code{Viscera_Weight}}{Gut weight after bleeding (g)}
-#'   \item{\code{Shell_Weight}}{Weight after being dried (g)}
 #'   \item{\code{Older_12}}{Whether the abalone is (strictly) greater than 12 years of age (0 = no, 1 = yes)}
 #'}
 #' @source Warwick J Nash, Tracy L Sellers, Simon R Talbot, Andrew J Cawthorn and Wes B Ford (1994) "The Population Biology of Abalone (_Haliotis_ species) in Tasmania. I. Blacklip Abalone (_H. rubra_) from the North Coast and Islands of Bass Strait",Sea Fisheries Division, Technical Report No. 48 (ISSN 1034-3288)

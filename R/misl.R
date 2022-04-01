@@ -17,8 +17,8 @@
 #' @examples
 #' # This will generate imputations for the built-in abalone dataset.
 #' misl_imp <- misl(abalone,
-#'     maxit = 5,
-#'     m = 5,
+#'     maxit = 2,
+#'     m = 2,
 #'     con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
 #'     bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
 #'     cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger")
@@ -180,7 +180,7 @@ misl <- function(dataset,
           # https://stefvanbuuren.name/fimd/sec-categorical.html#def:binary
           # https://github.com/cran/mice/blob/master/R/mice.impute.logreg.R
 
-          uniform_values <- runif(length(predictions_boot_dot))
+          uniform_values <- stats::runif(length(predictions_boot_dot))
           predicted_values <- as.integer(uniform_values <= predictions_boot_dot)
 
           dataset_master_copy[[column]] <- ifelse(is.na(dataset[[column]]), predicted_values, dataset[[column]])
@@ -194,7 +194,7 @@ misl <- function(dataset,
           list_of_matches <- c()
           non_na_predictions <- predictions_boot_dot[is.na(dataset[[column]])]
           for(value in seq_along(non_na_predictions)){
-            distance <- head(order(abs(non_na_predictions[value] - predictions_full_hat[!is.na(dataset[[column]])])), 5)
+            distance <- utils::head(order(abs(non_na_predictions[value] - predictions_full_hat[!is.na(dataset[[column]])])), 5)
             list_of_matches[value] <- dataset[[column]][!is.na(dataset[[column]])][sample(distance,1)]
           }
           dataset_master_copy[[column]][is.na(dataset[[column]])] <- list_of_matches
@@ -213,7 +213,7 @@ misl <- function(dataset,
         # A trace plot for categorical variable is not entirely meaningful... but imputations should be checked for plausibility
         if(outcome_type != "categorical" & sum(is.na(dataset[[column]])) > 0){
           trace_plot$value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop & trace_plot$statistic == "mean"] <- mean(dataset_master_copy[[column]][is.na(dataset[[column]])])
-          trace_plot$value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop & trace_plot$statistic == "sd"] <- sd(dataset_master_copy[[column]][is.na(dataset[[column]])])
+          trace_plot$value[trace_plot$variable == column & trace_plot$m == m_loop & trace_plot$iteration == i_loop & trace_plot$statistic == "sd"] <- stats::sd(dataset_master_copy[[column]][is.na(dataset[[column]])])
         }
 
       }

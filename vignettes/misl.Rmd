@@ -110,7 +110,7 @@ categorical variable: mean and a series of independent binomial regressions
 Once the algorithm has finished, we can view a trace plot to verify convergence:
 
 ```{r}
-misl::plot(misl_imputations)
+misl::trace_plot(misl_imputations)
 ```
 
 We can see evidence of convergence... 

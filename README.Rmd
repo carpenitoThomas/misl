@@ -39,7 +39,7 @@ Here's an example with abalone data in which we use `misl()` imputation and then
 library(misl)
 set.seed(123)
 
-misl_imp <- misl(abalone, maxit = 5, m = 5, quiet = TRUE,
+misl_imp <- misl(abalone, maxit = 2, m = 2, quiet = TRUE,
                   con_method = c("Lrnr_glm_fast", "Lrnr_mean"),
                   bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
                   cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
@@ -54,6 +54,6 @@ summary(mice::pool(misl_modeling), conf.int = TRUE)
 We can also look at the traceplot of the imputations as well:
 
 ```{r}
-#misl::plot(misl_imp)
+misl::trace_plot(misl_imp)
 ```
 

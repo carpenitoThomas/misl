@@ -19,8 +19,7 @@
 #' @examples
 #' # This will generate imputations for the built-in abalone dataset.
 #' misl_imp <- misl_mnar(abalone,
-#' m = 1,
-#' abalone, maxit = 5, m = 5, quiet = TRUE,
+#' abalone, maxit = 2, m = 2, quiet = TRUE,
 #' con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
 #' bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
 #' cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"),

@@ -12,9 +12,6 @@ A data frame with 4177 rows and 9 variables:
 \item{\code{Diameter}}{Perpendicular to length (mm)}
 \item{\code{Height}}{With meat in shell (mm)}
 \item{\code{Whole_Weight}}{Whole abalone (g)}
-\item{\code{Shuck_Weight}}{Weight of meat (g)}
-\item{\code{Viscera_Weight}}{Gut weight after bleeding (g)}
-\item{\code{Shell_Weight}}{Weight after being dried (g)}
 \item{\code{Older_12}}{Whether the abalone is (strictly) greater than 12 years of age (0 = no, 1 = yes)}
 }
 }
