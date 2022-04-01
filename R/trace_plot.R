@@ -29,7 +29,7 @@ trace_plot <- function(imputations){
       long_dataframe %>%
         dplyr::mutate(m = as.factor(m)) %>%
         dplyr::filter(!is.na(value)) %>%
-        ggplot2::ggplot(ggplot2::aes(x = iteration, y = value, group = m, color= m)) +
+        ggplot2::ggplot(ggplot2::aes(x = as.integer(iteration), y = value, group = m, color= m)) +
         ggplot2::geom_line() +
         ggplot2::geom_point() +
         ggforce::facet_wrap_paginate(variable ~ statistic , scales = "free", ncol = 2, nrow = 3, page = page_num) +

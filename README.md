@@ -35,10 +35,10 @@ and then pool the results:
 library(misl)
 set.seed(123)
 
-misl_imp <- misl(abalone, maxit = 2, m = 2, quiet = TRUE,
-                  con_method = c("Lrnr_glm_fast", "Lrnr_mean"),
-                  bin_method = c("Lrnr_mean", "Lrnr_glm_fast"),
-                  cat_method = c("Lrnr_independent_binomial", "Lrnr_mean"))
+misl_imp <- misl(abalone, maxit = 20, m = 10, quiet = TRUE,
+    con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
+    bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
+    cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(Whole_Weight ~ Sex + Length + Diameter + Height + Older_12, data = y$datasets)
@@ -46,21 +46,21 @@ misl_modeling <- lapply(misl_imp, function(y){
 
 summary(mice::pool(misl_modeling), conf.int = TRUE)
 #>          term     estimate   std.error   statistic        df      p.value
-#> 1 (Intercept) -0.887693966 0.019116347 -46.4363815 57.552274 0.000000e+00
-#> 2        SexI -0.062548078 0.009443352  -6.6235039 42.294646 4.878313e-08
-#> 3        SexM -0.004023852 0.010026339  -0.4013281  4.032384 7.085381e-01
-#> 4      Length  1.098477222 0.323511367   3.3954826  1.663517 9.867079e-02
-#> 5    Diameter  1.779552767 0.261800553   6.7973606  4.387888 1.738168e-03
-#> 6      Height  2.966731278 0.683115692   4.3429412  1.043598 1.361443e-01
-#> 7    Older_12  0.062752546 0.013503397   4.6471674  1.788729 5.333936e-02
-#>          2.5 %      97.5 %
-#> 1 -0.925965830 -0.84942210
-#> 2 -0.081601601 -0.04349455
-#> 3 -0.031773486  0.02372578
-#> 4 -0.601374698  2.79832914
-#> 5  1.077331080  2.48177446
-#> 6 -4.901370957 10.83483351
-#> 7 -0.002445918  0.12795101
+#> 1 (Intercept) -0.992171743 0.018252802 -54.3572290 208.63020 0.000000e+00
+#> 2        SexI -0.044382542 0.008882474  -4.9966417 188.38235 1.327084e-06
+#> 3        SexM -0.002187947 0.006761454  -0.3235912 692.98769 7.463452e-01
+#> 4      Length  1.478661263 0.186511138   7.9280051  47.93463 2.855538e-10
+#> 5    Diameter  2.070730580 0.243349864   8.5092736  37.05361 3.042553e-10
+#> 6      Height  1.408162289 0.204656664   6.8806080  18.04273 1.929282e-06
+#> 7    Older_12  0.052249600 0.007550405   6.9201057  77.10638 1.170662e-09
+#>         2.5 %      97.5 %
+#> 1 -1.02815531 -0.95618817
+#> 2 -0.06190444 -0.02686065
+#> 3 -0.01546334  0.01108744
+#> 4  1.10364227  1.85368025
+#> 5  1.57768100  2.56378016
+#> 6  0.97826758  1.83805700
+#> 7  0.03721515  0.06728405
 ```
 
 We can also look at the traceplot of the imputations as
