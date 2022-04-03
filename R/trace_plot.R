@@ -33,7 +33,7 @@ trace_plot <- function(imputations){
         ggplot2::geom_line() +
         ggforce::facet_wrap_paginate(variable ~ statistic , scales = "free", ncol = 2, nrow = 3, page = page_num) +
         ggplot2::theme_bw() +
-        ggpot2::theme(legend.position="none")
+        ggplot2::theme(legend.position="none")
     )
   }
 }

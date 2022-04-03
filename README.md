@@ -35,32 +35,33 @@ and then pool the results:
 library(misl)
 set.seed(123)
 
-misl_imp <- misl(abalone, maxit = 20, m = 10, quiet = TRUE,
+misl_imp <- misl(abalone, maxit = 10, m = 10, quiet = TRUE,
     con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
     bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
     cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
+#> Growing trees.. Progress: 13%. Estimated remaining time: 1 hour, 45 minutes, 1 seconds.
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(Whole_Weight ~ Sex + Length + Diameter + Height + Older_12, data = y$datasets)
 })
 
 summary(mice::pool(misl_modeling), conf.int = TRUE)
-#>          term     estimate   std.error   statistic        df      p.value
-#> 1 (Intercept) -0.992171743 0.018252802 -54.3572290 208.63020 0.000000e+00
-#> 2        SexI -0.044382542 0.008882474  -4.9966417 188.38235 1.327084e-06
-#> 3        SexM -0.002187947 0.006761454  -0.3235912 692.98769 7.463452e-01
-#> 4      Length  1.478661263 0.186511138   7.9280051  47.93463 2.855538e-10
-#> 5    Diameter  2.070730580 0.243349864   8.5092736  37.05361 3.042553e-10
-#> 6      Height  1.408162289 0.204656664   6.8806080  18.04273 1.929282e-06
-#> 7    Older_12  0.052249600 0.007550405   6.9201057  77.10638 1.170662e-09
+#>          term      estimate   std.error    statistic        df      p.value
+#> 1 (Intercept) -0.9917138520 0.017134443 -57.87838125 889.35930 0.000000e+00
+#> 2        SexI -0.0426686559 0.009137655  -4.66954137 135.62160 7.174625e-06
+#> 3        SexM  0.0002759165 0.007257143   0.03801998 174.92055 9.697151e-01
+#> 4      Length  1.3620546956 0.206252463   6.60382269  30.35273 2.469290e-07
+#> 5    Diameter  2.2108707044 0.250137186   8.83863267  32.66127 3.547722e-10
+#> 6      Height  1.4354390562 0.138282429  10.38048769 101.74196 0.000000e+00
+#> 7    Older_12  0.0474856116 0.008259594   5.74914621  45.01115 7.343897e-07
 #>         2.5 %      97.5 %
-#> 1 -1.02815531 -0.95618817
-#> 2 -0.06190444 -0.02686065
-#> 3 -0.01546334  0.01108744
-#> 4  1.10364227  1.85368025
-#> 5  1.57768100  2.56378016
-#> 6  0.97826758  1.83805700
-#> 7  0.03721515  0.06728405
+#> 1 -1.02534251 -0.95808519
+#> 2 -0.06073938 -0.02459794
+#> 3 -0.01404692  0.01459875
+#> 4  0.94103615  1.78307325
+#> 5  1.70176219  2.71997922
+#> 6  1.16114816  1.70972995
+#> 7  0.03085005  0.06412117
 ```
 
 We can also look at the traceplot of the imputations as
