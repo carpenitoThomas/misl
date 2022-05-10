@@ -26,6 +26,11 @@ install.packages("devtools")
 devtools::install_github("carpenitoThomas/misl")
 ```
 
+## Issues
+
+If you find any issues with this software or would like to make a
+request, please do so by filing an issue.
+
 ## Example
 
 Here’s an example with abalone data in which we use `misl()` imputation
@@ -39,7 +44,6 @@ misl_imp <- misl(abalone, maxit = 10, m = 10, quiet = TRUE,
     con_method = c("Lrnr_glm_fast", "Lrnr_earth", "Lrnr_ranger"),
     bin_method = c("Lrnr_earth", "Lrnr_glm_fast", "Lrnr_ranger"),
     cat_method = c("Lrnr_independent_binomial", "Lrnr_ranger"))
-#> Growing trees.. Progress: 13%. Estimated remaining time: 1 hour, 45 minutes, 1 seconds.
 
 misl_modeling <- lapply(misl_imp, function(y){
   stats::lm(Whole_Weight ~ Sex + Length + Diameter + Height + Older_12, data = y$datasets)
@@ -72,3 +76,16 @@ misl::trace_plot(misl_imp)
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-4-2.png" width="100%" />
+
+## License
+
+© 2021-2022 [Thomas Carpenito](https://github.com/carpenitoThomas),
+[Justin Manjourides](https://github.com/JustinManjourides)
+
+The contents of this repository are distributed under the GPL-3 license.
+See file `LICENSE` for details.
+
+## References
+
+Carpenito, Thomas and Manjourides, Justin. “MISL: Multiple Imputation by
+Super Learning.” Statistical Methods in Medical Research, In Press.

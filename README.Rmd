@@ -31,6 +31,12 @@ The MISL algorithm is not yet available on CRAN; instead, please use the develop
 install.packages("devtools")
 devtools::install_github("carpenitoThomas/misl")
 ```
+
+## Issues
+
+If you find any issues with this software or would like to make a request, please do so by filing an issue.
+
+
 ## Example
 
 Here's an example with abalone data in which we use `misl()` imputation and then pool the results:
@@ -57,3 +63,15 @@ We can also look at the traceplot of the imputations as well:
 misl::trace_plot(misl_imp)
 ```
 
+## License
+
+&copy; 2021-2022 [Thomas Carpenito](https://github.com/carpenitoThomas), [Justin Manjourides](https://github.com/JustinManjourides)
+
+
+The contents of this repository are distributed under the GPL-3 license. See
+file `LICENSE` for details.
+
+
+## References
+
+Carpenito, Thomas and Manjourides, Justin. “MISL: Multiple Imputation by Super Learning.” Statistical Methods in Medical Research, In Press.
