@@ -1,12 +1,12 @@
 Package: misl
-Title: Performs multiple imputation using the super learning framework
+Title: Multiple Imputation by Super Learning
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Thomas",
            family = "Carpenito",
            role = c("aut", "cre"),
            email = "carpenito.t@gmail.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           comment = c(ORCID = "0000-0003-3591-0680"))
 Description: The  MISL  algorithm  is  similar  to  other  full  conditional  specification  methods  in  that  a  series  of m unique datasets are generated through convergence of multiple iterations however the true predictive power of MISL is highlighted with the advantage of not needing to make explicit modeling assumptions about the distribution of the data.  This allows for variability in imputations to come from the variation in cross validation, not from explicitly modeling posterior distributions.
 License: MIT + file LICENSE
 Encoding: UTF-8
