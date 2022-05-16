@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 The goal of MISL (Multiple Imputation by Super Learning) is to create multiply imputed datasets using the super learning framework. This package builds heavily off of the `sl3` and `mice` packages.
 
-This method has been submitted for publication and is currently in review.
+This method has been accepted for publication in Statistical Methods in Medical Research. A link to the publication is forthcoming.
 
 ## Installation
 
